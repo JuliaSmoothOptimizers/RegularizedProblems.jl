@@ -35,7 +35,7 @@ function bpdn_model(args...)
     g
   end
 
-  FirstOrderModel(obj, grad!, zero(x0), name = "BPDN")
+  FirstOrderModel(obj, grad!, zero(x0), name = "BPDN"), x0
 end
 
 function bpdn_nls_model(args...)
@@ -51,6 +51,6 @@ function bpdn_nls_model(args...)
   jprod_resid!(Jv, x, v) = mul!(Jv, A, v)
   jtprod_resid!(Jtv, x, v) = mul!(Jtv, A', v)
 
-  FirstOrderNLSModel(resid!, jprod_resid!, jtprod_resid!, size(A, 1), zero(x0), name = "BPDN-LS")
+  FirstOrderNLSModel(resid!, jprod_resid!, jtprod_resid!, size(A, 1), zero(x0), name = "BPDN-LS"), x0
 end
 
