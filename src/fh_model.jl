@@ -52,7 +52,7 @@ function FH_smooth_term()
       return dot(F, F) / 2
   end
 
-  return data, simulate, residual, misfit
+  return data, simulate, residual, misfit, x0
 end
 
 """
@@ -77,8 +77,8 @@ constructure, e.g., to set the automatic differentiation backend.
 An instance of an `ADNLPModel` that represents the Fitzhugh-Nagumo problem.
 """
 function fh_model(; kwargs...)
-  data, simulate, resid, misfit = FH_smooth_term()
-  ADNLPModels.ADNLPModel(misfit, ones(5); kwargs...)
+  data, simulate, resid, misfit, x0 = FH_smooth_term()
+  ADNLPModels.ADNLPModel(misfit, ones(5); kwargs...), x0
 end
 
 """
@@ -91,8 +91,8 @@ See the documentation of `fh_model()` for more information and a
 description of the arguments.
 """
 function fh_nls_model(; kwargs...)
-  data, simulate, resid, misfit = FH_smooth_term()
+  data, simulate, resid, misfit, x0 = FH_smooth_term()
   nequ = 202
-  ADNLPModels.ADNLSModel(resid, ones(5), nequ; kwargs...)
+  ADNLPModels.ADNLSModel(resid, ones(5), nequ; kwargs...), x0
 end
 
