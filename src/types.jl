@@ -15,11 +15,11 @@ mutable struct FirstOrderModel{T,S,F,G} <: AbstractNLPModel{T,S}
   meta :: NLPModelMeta{T,S}
   counters :: Counters
 
-  f :: F  # smooth objective
-  ∇f! :: G  # in-place gradient
+  f :: F
+  ∇f! :: G
 
   function FirstOrderModel{T,S,F,G}(f::F, ∇f!::G, x::S; name :: AbstractString = "first-order model") where {T, S, F <: Function, G <: Function}
-    meta = NLPModelMeta(length(x), x0 = x, name=name)
+    meta = NLPModelMeta(length(x), x0 = x, name = name)
     return new{T,S,F,G}(meta, Counters(), f, ∇f!)
   end
 end
@@ -40,17 +40,29 @@ function NLPModels.grad!(nlp::FirstOrderModel, x::AbstractVector, g::AbstractVec
   return g
 end
 
+"""
+    model = FirstOrderNLSModel(r!, jv!, jtv!; name = "first-order NLS model")
+
+A simple subtype of `AbstractNLSModel` to represent a nonlinear least-squares problem
+with a smooth residual.
+
+## Arguments
+
+* `r! :: R <: Function`: a function such that `r!(y, x)` stores the residual at `x` in `y`;
+* `jv! :: J <: Function`: a function such that `jv!(u, x, v)` stores the product between the residual Jacobian at `x` and the vector `v` in `u`;
+* `jtv! :: Jt <: Function`: a function such that `jtv!(u, x, v)` stores the product between the transpose of the residual Jacobian at `x` and the vector `v` in `u`.
+"""
 mutable struct FirstOrderNLSModel{T, S, R, J, Jt} <: AbstractNLSModel{T, S}
   meta :: NLPModelMeta{T, S}
   nls_meta :: NLSMeta{T, S}
   counters :: NLSCounters
 
-  resid! :: R  # least-squares residual
-  jprod_resid! :: J  # in-place Jacobian-vector product
-  jtprod_resid! :: Jt  # in-place transposed-Jacobian-vector product
+  resid! :: R
+  jprod_resid! :: J
+  jtprod_resid! :: Jt
 
   function FirstOrderNLSModel{T,S,R,J,Jt}(r::R, jv::J, jtv::Jt, nequ::Int, x::S; name :: AbstractString = "first-order NLS model") where {T, S, R <: Function, J <: Function, Jt <: Function}
-    meta = NLPModelMeta(length(x), x0 = x, name=name)
+    meta = NLPModelMeta(length(x), x0 = x, name = name)
     nls_meta = NLSMeta{T, S}(nequ, length(x), x0 = x)
     return new{T,S,R,J,Jt}(meta, nls_meta, NLSCounters(), r, jv, jtv)
   end
