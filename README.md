@@ -1,5 +1,8 @@
 # RegularizedProblems.jl
 
+[![CI](https://github.com/JuliaSmoothOptimizers/RegularizedProblems.jl/actions/workflows/ci.yml/badge.svg)](https://github.com/JuliaSmoothOptimizers/RegularizedProblems.jl/actions/workflows/ci.yml)
+[![](https://img.shields.io/badge/docs-latest-3f51b5.svg)](https://JuliaSmoothOptimizers.github.io/RegularizedProblems.jl/dev)
+
 ## Synopsis
 
 `RegularizedProblems` is a repository of optimization problems implemented in pure Julia.
