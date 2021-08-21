@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/JuliaSmoothOptimizers/RegularizedProblems.jl/actions/workflows/ci.yml/badge.svg)](https://github.com/JuliaSmoothOptimizers/RegularizedProblems.jl/actions/workflows/ci.yml)
 [![](https://img.shields.io/badge/docs-latest-3f51b5.svg)](https://JuliaSmoothOptimizers.github.io/RegularizedProblems.jl/dev)
+[![codecov](https://codecov.io/gh/JuliaSmoothOptimizers/RegularizedProblems.jl/branch/main/graph/badge.svg?token=fMoPKut9Fp)](https://codecov.io/gh/JuliaSmoothOptimizers/RegularizedProblems.jl)
 
 ## Synopsis
 
