@@ -15,4 +15,8 @@ makedocs(
   pages = Any["Home" => "index.md", "Reference" => "reference.md"],
 )
 
-deploydocs(repo = "github.com/JuliaSmoothOptimizers/RegularizedProblems.jl.git")
+deploydocs(
+  repo = "github.com/JuliaSmoothOptimizers/RegularizedProblems.jl.git",
+  push_preview = true,
+  devbranch = "main",
+)
