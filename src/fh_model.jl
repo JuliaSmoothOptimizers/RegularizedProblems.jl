@@ -31,7 +31,13 @@ function FH_smooth_term()
   # solve FH with parameters p
   function simulate(p)
     temp_prob = DifferentialEquations.remake(prob_FH, p = p)
-    sol = DifferentialEquations.solve(temp_prob, DifferentialEquations.Vern9(), abstol = 1e-14, reltol = 1e-14, saveat = savetime)
+    sol = DifferentialEquations.solve(
+      temp_prob,
+      DifferentialEquations.Vern9(),
+      abstol = 1e-14,
+      reltol = 1e-14,
+      saveat = savetime,
+    )
     # if any((sol.retcode != :Success for s in sol))
     #   @warn "ODE solution failed with parameters" p'
     #   error("ODE solution failed")
@@ -48,8 +54,8 @@ function FH_smooth_term()
 
   # misfit = ‖residual‖² / 2
   function misfit(p)
-      F = residual(p)
-      return dot(F, F) / 2
+    F = residual(p)
+    return dot(F, F) / 2
   end
 
   return data, simulate, residual, misfit, x0
@@ -95,4 +101,3 @@ function fh_nls_model(; kwargs...)
   nequ = 202
   ADNLPModels.ADNLSModel(resid, ones(5), nequ; kwargs...), x0
 end
-
