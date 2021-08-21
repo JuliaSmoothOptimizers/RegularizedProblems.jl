@@ -39,4 +39,3 @@ end
   @test all(model.meta.x0 .== 1)
   @test length(findall(x -> x .!= 0, sol)) == 2
 end
-
