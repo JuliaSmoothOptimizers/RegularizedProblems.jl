@@ -10,6 +10,8 @@ NLPModels = "a4795742-8479-5a88-8948-cc11e1c8c1a6"
 Noise = "81d43f40-5267-43b7-ae1c-8b967f377efa"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Requires = "ae029012-a4dd-5104-9daa-d747884805df"
+MLDatasets = "eb30cadb-4394-5ae3-aed4-317e484a6458"
+Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
 
 [compat]
 ADNLPModels = "^0.3, 0.4"
