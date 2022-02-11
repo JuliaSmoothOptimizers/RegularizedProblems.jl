@@ -89,7 +89,6 @@ function tanh_train_model()
   function obj(x)
     r = resid(x)
     dot(r, r) / 2
-    # sum(r)
   end
 
   function grad!(g, x)
