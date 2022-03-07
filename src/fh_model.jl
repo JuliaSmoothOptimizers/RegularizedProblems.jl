@@ -64,8 +64,9 @@ end
 """
     fh_model(; kwargs...)
 
-Return an instance of an `NLPModel` representing the Fitzhugh-Nagumo problem,
-i.e., the over-determined nonlinear least-squares objective
+Return an instance of an `NLPModel` and an instance of an `NLSModel` representing
+the same Fitzhugh-Nagumo problem, i.e., the over-determined nonlinear
+least-squares objective
 
    ½ ‖F(x)‖₂²,
 
@@ -80,24 +81,12 @@ constructure, e.g., to set the automatic differentiation backend.
 
 ## Return Value
 
-An instance of an `ADNLPModel` that represents the Fitzhugh-Nagumo problem.
+An instance of an `ADNLPModel` that represents the Fitzhugh-Nagumo problem, an instance
+of an `ADNLSModel` that represents the same problem, and the exact solution.
 """
 function fh_model(; kwargs...)
   data, simulate, resid, misfit, x0 = FH_smooth_term()
-  ADNLPModels.ADNLPModel(misfit, ones(5); kwargs...), x0
-end
-
-"""
-    fh_nls_model(; kwargs...)
-
-Return an instance of an `ADNLSModel` that represents the Fitzhugh-Nagumo
-problem explicitly as a nonlinear least-squares problem.
-
-See the documentation of `fh_model()` for more information and a
-description of the arguments.
-"""
-function fh_nls_model(; kwargs...)
-  data, simulate, resid, misfit, x0 = FH_smooth_term()
   nequ = 202
-  ADNLPModels.ADNLSModel(resid, ones(5), nequ; kwargs...), x0
+  ADNLPModels.ADNLPModel(misfit, ones(5); kwargs...), ADNLPModels.ADNLSModel(resid, ones(5), nequ; kwargs...), x0
 end
+
