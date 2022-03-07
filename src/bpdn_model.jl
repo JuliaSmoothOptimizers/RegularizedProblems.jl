@@ -16,11 +16,12 @@ bpdn_data(compound::Int = 1, args...) =
   bpdn_data(200 * compound, 512 * compound, 10 * compound, args...)
 
 """
-    model, sol = bpdn_model(args...)
-    model, sol = bpdn_model(compound = 1, args...)
+    model, nls_model, sol = bpdn_model(args...)
+    model, nls_model, sol = bpdn_model(compound = 1, args...)
 
-Return an instance of an `NLPModel` representing the basis-pursuit denoise
-problem, i.e., the under-determined linear least-squares objective
+Return an instance of an `NLPModel` and an instance of an `NLSModel` representing
+the same basis-pursuit denoise problem, i.e., the under-determined linear
+least-squares objective
 
    ½ ‖Ax - b‖₂²,
 
@@ -32,7 +33,7 @@ vector following a normal distribution with mean zero and standard deviation σ.
 * `m :: Int`: the number of rows of A
 * `n :: Int`: the number of columns of A (with `n` ≥ `m`)
 * `k :: Int`: the number of nonzero elements in x̄
-* `noise :: Float64`: noise amount ϵ (default: 0.01).
+* `noise :: Float64`: noise standard deviation σ (default: 0.01).
 
 The second form calls the first form with arguments
 
@@ -42,44 +43,10 @@ The second form calls the first form with arguments
 
 ## Return Value
 
-An instance of a `FirstOrderModel` that represents the basis-pursuit denoise problem
-and the exact solution x̄.
+An instance of a `FirstOrderModel` and of a `FirstOrderNLSModel` that represent the same
+basis-pursuit denoise problem, and the exact solution x̄.
 """
 function bpdn_model(args...)
-  A, b, b0, x0 = bpdn_data(args...)
-  r = similar(b)
-
-  function resid!(r, x)
-    mul!(r, A, x)
-    r .-= b
-    r
-  end
-
-  function obj(x)
-    resid!(r, x)
-    dot(r, r) / 2
-  end
-
-  function grad!(g, x)
-    resid!(r, x)
-    mul!(g, A', r)
-    g
-  end
-
-  FirstOrderModel(obj, grad!, zero(x0), name = "BPDN"), x0
-end
-
-"""
-    model, sol = bpdn_nls_model(args...)
-    model, sol = bpdn_nls_model(compound = 1, args...)
-
-Return an instance of a `FirstOrderNLSModel` that represents the basis-pursuit
-denoise problem explicitly as a least-squares problem and the exact solution x̄.
-
-See the documentation of `bpdn_model()` for more information and a
-description of the arguments.
-"""
-function bpdn_nls_model(args...)
   A, b, b0, x0 = bpdn_data(args...)
   r = similar(b)
 
@@ -92,6 +59,17 @@ function bpdn_nls_model(args...)
   jprod_resid!(Jv, x, v) = mul!(Jv, A, v)
   jtprod_resid!(Jtv, x, v) = mul!(Jtv, A', v)
 
-  FirstOrderNLSModel(resid!, jprod_resid!, jtprod_resid!, size(A, 1), zero(x0), name = "BPDN-LS"),
-  x0
+  function obj(x)
+    resid!(r, x)
+    dot(r, r) / 2
+  end
+
+  function grad!(g, x)
+    resid!(r, x)
+    mul!(g, A', r)
+    g
+  end
+
+  FirstOrderModel(obj, grad!, zero(x0), name = "BPDN"), FirstOrderNLSModel(resid!, jprod_resid!, jtprod_resid!, size(A, 1), zero(x0), name = "BPDN-LS"), x0
 end
+
