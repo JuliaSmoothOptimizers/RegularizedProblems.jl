@@ -83,7 +83,7 @@ function tanh_train_model()
     mul!(r, Ahat, x)
     tmp .= sech.(r).^2
     tmp .*= v
-    tmp .*= -1.
+    tmp .*= -1
     mul!(Jtv, Ahat', tmp)
   end
   function obj(x)
@@ -95,7 +95,7 @@ function tanh_train_model()
     mul!(r, Ahat, x)
     tmp .= (sech.(r)).^2
     tmp .*= (1 .- tanh.(r))
-    tmp .*= -1.
+    tmp .*= -1
     mul!(g, Ahat', tmp)
     g
   end
@@ -124,7 +124,7 @@ function tanh_test_model()
     mul!(r, Ahat, x)
     tmp .= sech.(r).^2
     tmp .*= v
-    tmp .*= -1.
+    tmp .*= -1
     mul!(Jtv, Ahat', tmp)
   end
 
@@ -138,7 +138,7 @@ function tanh_test_model()
     mul!(r, Ahat, x)
     tmp .= (sech.(r)).^2
     tmp .*= (1 .- tanh.(r))
-    tmp .*= -1.
+    tmp .*= -1
     mul!(g, Ahat', tmp)
     g
   end
