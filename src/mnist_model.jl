@@ -2,7 +2,7 @@ export tanh_train_model, tanh_test_model#, tan_nls_model
 
 function tan_data_train()
   #load data
-  A, b = MNIST.traindata()
+  A, b = MLDatasets.MNIST.traindata()
   ind = findall(x -> x == 0 || x == 1, b)
   #reshape to matrix
   A = reshape(A,size(A,1)*size(A,2), size(A,3))./255
@@ -20,7 +20,7 @@ function tan_data_train()
 end
 
 function tan_data_test()
-  A0, b0 = MNIST.testdata()
+  A0, b0 = MLDatasets.MNIST.testdata()
   ind = findall(x -> x == 0 || x == 1, b)
   A0 = reshape(A0,size(A0,1)*size(A0,2), size(A0,3))./255
 
