@@ -70,6 +70,7 @@ function bpdn_model(args...)
     g
   end
 
-  FirstOrderModel(obj, grad!, zero(x0), name = "BPDN"), FirstOrderNLSModel(resid!, jprod_resid!, jtprod_resid!, size(A, 1), zero(x0), name = "BPDN-LS"), x0
+  FirstOrderModel(obj, grad!, zero(x0), name = "BPDN"),
+  FirstOrderNLSModel(resid!, jprod_resid!, jtprod_resid!, size(A, 1), zero(x0), name = "BPDN-LS"),
+  x0
 end
-
