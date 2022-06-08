@@ -6,6 +6,7 @@ using NLPModels
 
 include("types.jl")
 include("bpdn_model.jl")
+include("nnmf_model.jl")
 
 function __init__()
   @require ADNLPModels = "54578032-b7ea-4c30-94aa-7cbd1cce6c9a" begin
