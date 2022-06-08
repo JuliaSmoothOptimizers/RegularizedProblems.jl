@@ -36,5 +36,5 @@ function nnmf_model(m::Int, n::Int, k::Int)
     g
   end
 
-  FirstOrderModel(obj, grad!, zeros(m*k + k*n), name = "NNMF")
+  FirstOrderModel(obj, grad!, randn(m*k + k*n), name = "NNMF")
 end
