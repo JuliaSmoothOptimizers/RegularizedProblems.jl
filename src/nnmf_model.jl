@@ -16,7 +16,7 @@ function nnmf_model(m::Int, n::Int, k::Int)
     W = reshape(x[1:(m*k)], (m,k))
     H = reshape(x[(m*k+1):end], (k,n))
     mul!(WH, W, H)
-    r .= vec((A - WH).^2)
+    r .= vec(A - WH)
     r
   end
 
