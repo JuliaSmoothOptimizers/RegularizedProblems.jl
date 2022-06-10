@@ -1,7 +1,7 @@
 export nnmf_model
 
 function nnmf_data(m::Int, n::Int)
-  A = Array(randn(n, m))
+  A = Array(rand(Float64,(n, m)))
   A
 end
 
