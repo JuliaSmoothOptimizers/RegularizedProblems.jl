@@ -29,11 +29,11 @@ function nnmf_model(m::Int, n::Int, k::Int)
 
   function grad!(g, x)
     resid!(r, x)
-    R = reshape_array(r, (m,n))
-    W = reshape_array(x[1:(m*k)], (m,k))
-    H = reshape_array(x[(m*k+1):end], (k,n))
-    mul!(gw, -R, Array(H'))
-    mul!(gh, -Array(W'), R)
+    minusR = -reshape_array(r, (m,n))
+    W_T = reshape_array(x[1:(m*k)], (m,k))'
+    H_T = reshape_array(x[(m*k+1):end], (k,n))'
+    mul!(gw, minusR, H_T)
+    mul!(gh, W_T, minusR)
     g .= vcat(vec(gw), vec(gh))
     g
   end
