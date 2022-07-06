@@ -18,7 +18,7 @@ function FH_smooth_term()
   pars_FH = [0.5, 0.08, 1.0, 0.8, 0.7]
   prob_FH = DifferentialEquations.ODEProblem(FH_ODE, u0, tspan, pars_FH)
 
-  x0 = [0.01, 0.2, 1.0, 0.01, 0.01]
+  x0 = [0, 0.2, 1.0, 0, 0]
   prob_VDP = DifferentialEquations.ODEProblem(FH_ODE, u0, tspan, x0)
   sol_VDP = DifferentialEquations.solve(prob_VDP, reltol = 1e-6, saveat = savetime)
 
