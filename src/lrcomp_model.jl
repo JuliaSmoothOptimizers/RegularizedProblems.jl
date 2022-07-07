@@ -21,7 +21,7 @@ function lrcomp_model(m::Int, n::Int)
   end
 
   function grad!(r, x)
-    resid!(r, x, A) 
+    resid!(r, x)
     r
   end
 
