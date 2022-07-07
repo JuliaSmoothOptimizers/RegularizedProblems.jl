@@ -23,8 +23,14 @@ mutable struct FirstOrderModel{T, S, F, G} <: AbstractNLPModel{T, S}
     ∇f!::G,
     x::S;
     name::AbstractString = "first-order model",
+    uvar::S = nothing,
+    lvar::S = nothing,
   ) where {T, S, F <: Function, G <: Function}
-    meta = NLPModelMeta(length(x), x0 = x, name = name, lvar = zeros(length(x)), uvar = zeros(length(x)) .= Inf)
+    if uvar != nothing & lvar != nothing
+      meta = NLPModelMeta(length(x), x0 = x, name = name, lvar = lvar, uvar = uvar)
+    else 
+      meta = NLPModelMeta(length(x), x0 = x, name = name)
+    end 
     return new{T, S, F, G}(meta, Counters(), f, ∇f!)
   end
 end
