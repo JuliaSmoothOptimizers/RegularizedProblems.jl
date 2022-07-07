@@ -9,22 +9,20 @@ function lrcomp_model(m::Int, n::Int)
     A = lrcomp_data(m, n)
     r = vec(similar(A))
 
-    function resid!(r, x, A)
-        for i in eachindex(A)
-            r[i] = x[i] - A[i]
-        end
+  function resid!(r, x)
+    for i in eachindex(A)
+      r[i] = x[i] - A[i]
     end
 
+  function obj(x)
+    resid!(r, x)
+    dot(r, r) / 2
+  end
 
-    function obj(x)
-        resid!(r, x, A)
-        dot(r, r) / 2
-    end
-
-    function grad!(r, x)
-        resid!(r, x, A)
-        r
-    end
+  function grad!(r, x)
+    resid!(r, x)
+    r
+  end
 
     FirstOrderModel(obj, grad!, rand(Float64, m * n), name = "LRCOMP")
 end
