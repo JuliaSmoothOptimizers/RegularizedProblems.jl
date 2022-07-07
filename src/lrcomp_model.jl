@@ -9,7 +9,7 @@ function lrcomp_model(m::Int, n::Int)
   A = lrcomp_data(m, n)
   r = vec(similar(A))
 
-  function resid!(r, x, A)
+  function resid!(r, x)
     for i in eachindex(A)
       r[i] = x[i] - A[i]
     end
