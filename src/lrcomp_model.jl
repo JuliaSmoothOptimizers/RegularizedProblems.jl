@@ -15,7 +15,6 @@ function lrcomp_model(m::Int, n::Int)
     end
   end
 
-
   function obj(x)
     resid!(r, x, A)
     dot(r, r) / 2
