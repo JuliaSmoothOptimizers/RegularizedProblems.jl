@@ -5,6 +5,7 @@ using Random, Requires
 using NLPModels
 using Distributions, Noise
 
+include("utils.jl")
 include("types.jl")
 include("bpdn_model.jl")
 include("lrcomp_model.jl")
