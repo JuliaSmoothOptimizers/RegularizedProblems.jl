@@ -5,19 +5,17 @@ function mat_rand(m::Int, n::Int, r::Int, sr::Float64, va::Float64, vb::Float64,
   xr = Array(rand(Uniform(-0.3, 0.1), n, r))
   xs = xl * xr'
   Ω = findall(<(sr), rand(m, n))
-  X = zeros(size(xs))
-  X[Ω] = xs[Ω]
   B = xs[Ω]
   B = (1 - c) * add_gauss(B, va, 0) + c * add_gauss(B, vb, 0)
   return xs, B, Ω
 end
 
 function mat_rand_model(m::Int, n::Int, r::Int, sr::Float64, va::Float64, vb::Float64, c::Float64)
-  T = mat_rand(m, n, r, sr, va, vb, c)
+  xs, B, Ω = mat_rand(m, n, r, sr, va, vb, c)
   res = zeros(m, n)
 
   function resid!(res, x)
-    res[T[3]] .= T[2] - reshape_array(x, (m, n))[T[3]]
+    res[Ω] .= B .- reshape_array(x, (m, n))[Ω]
     vec(res)
   end
 
@@ -30,10 +28,11 @@ function mat_rand_model(m::Int, n::Int, r::Int, sr::Float64, va::Float64, vb::Fl
     resid!(res, x)
     res
   end
+
   function REL(x)
-    rel = sqrt(norm(x - reshape_array(T[1], (m * n, 1))) / (m * n))
+    rel = sqrt(norm(x - reshape_array(xs, (m * n, 1))) / (m * n))
     rel
   end
 
-  return FirstOrderModel(obj, grad!, rand(Float64, m * n), name = "MATRAND"), REL, T[1]
+  return FirstOrderModel(obj, grad!, rand(Float64, m * n), name = "MATRAND"), REL, xs
 end

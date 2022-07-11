@@ -1,7 +1,7 @@
 export lrcomp_model
 
-function lrcomp_data(m::Int, n::Int)
-  A = Array(rand(Float64, (m, n)))
+function lrcomp_data(m::Int, n::Int; T::DataType = Float64)
+  A = Array(rand(T, (m, n)))
   A
 end
 
@@ -20,10 +20,7 @@ function lrcomp_model(m::Int, n::Int)
     dot(r, r) / 2
   end
 
-  function grad!(r, x)
-    resid!(r, x)
-    r
-  end
+  grad!(r, x) = resid!(r, x)
 
   FirstOrderModel(obj, grad!, rand(Float64, m * n), name = "LRCOMP")
 end
