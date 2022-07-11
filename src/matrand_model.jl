@@ -25,7 +25,7 @@ function mat_rand_model(
     res = zeros(m, n)
 
     function resid!(res, x)
-        res[T[3]] .= T[2] - reshape2(x, (m, n))[T[3]]
+        res[T[3]] .= T[2] - reshape_array(x, (m, n))[T[3]]
         vec(res)
     end
 
@@ -39,7 +39,7 @@ function mat_rand_model(
         res
     end
     function REL(x)
-        rel = sqrt(norm(x - reshape2(T[1], (m * n, 1))) / (m * n))
+        rel = sqrt(norm(x - reshape_array(T[1], (m * n, 1))) / (m * n))
         rel
     end
 
