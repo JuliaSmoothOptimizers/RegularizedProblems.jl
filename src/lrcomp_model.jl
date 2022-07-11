@@ -13,6 +13,7 @@ function lrcomp_model(m::Int, n::Int)
     for i in eachindex(A)
       r[i] = x[i] - A[i]
     end
+  end
 
   function obj(x)
     resid!(r, x)
