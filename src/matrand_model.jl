@@ -24,11 +24,7 @@ function mat_rand_model(m::Int, n::Int, r::Int, sr::Float64, va::Float64, vb::Fl
     dot(res, res) / 2
   end
 
-  function grad!(g, x)
-    resid!(res, x)
-    g = res
-    g
-  end
+  grad!(r, x) = resid!(r, x)
 
   function REL(x)
     rel = sqrt(norm(x - reshape_array(xs, (m * n, 1))) / (m * n))
