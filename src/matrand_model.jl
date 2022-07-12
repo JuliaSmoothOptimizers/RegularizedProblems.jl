@@ -15,6 +15,7 @@ function mat_rand_model(m::Int, n::Int, r::Int, sr::Float64, va::Float64, vb::Fl
   res = zeros(m, n)
 
   function resid!(res, x)
+    res .= zeros(m, n)
     res[Ω] .= B .- reshape_array(x, (m, n))[Ω]
     vec(res)
   end
