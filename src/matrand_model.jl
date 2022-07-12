@@ -26,7 +26,7 @@ function mat_rand_model(m::Int, n::Int, r::Int, sr::Float64, va::Float64, vb::Fl
 
   function grad!(x, g)
     resid!(res, x)
-    g .= res
+    g = res
     g
   end
 
