@@ -24,7 +24,7 @@ function mat_rand_model(m::Int, n::Int, r::Int, sr::Float64, va::Float64, vb::Fl
     dot(res, res) / 2
   end
 
-  function grad!(x, g)
+  function grad!(g, x)
     resid!(res, x)
     g = res
     g
