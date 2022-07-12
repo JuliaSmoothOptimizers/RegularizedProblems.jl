@@ -32,5 +32,5 @@ function mat_rand_model(m::Int, n::Int, r::Int, sr::Float64, va::Float64, vb::Fl
     rel
   end
 
-  return FirstOrderModel(obj, grad!, rand(Float64, m * n), name = "MATRAND"), REL, xs
+  return FirstOrderModel(obj, grad!, rand(Float64, m * n), name = "MATRAND"), REL, xs, Ω
 end
