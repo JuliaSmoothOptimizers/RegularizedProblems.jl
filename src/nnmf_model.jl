@@ -2,24 +2,24 @@ export nnmf_model
 
 function nnmf_data(m::Int, n::Int, k::Int, T::DataType = Float64)
 
-  params = [(zeros(Float64,n), zeros(Float64,(n,n))) for i in 1:k] 
+  parameters = [(zeros(Float64,n), zeros(Float64,(n,n))) for i in 1:k] 
 
   # generate mean vectors of the k clusters
   d = rand(1:k,n)
   v = convert(Vector{Float64},rand(1:3,n))
   for i in 1:n
-    params[d[i]][1][i] = v[i]
+    parameters[d[i]][1][i] = v[i]
   end
 
   # generate correlation matrices
   for i in 1:k
     for j in 1:n
-      params[i][2][j,j] = params[i][1][j] > 0.0 ? 0.3 : 1e-8 # 1e-8 instead of 0.0 to avoid problems in Cholesky factorization when calling MixtureModel
+      parameters[i][2][j,j] = parameters[i][1][j] > 0.0 ? 0.3 : 1e-8 # 1e-8 instead of 0.0 to avoid problems in Cholesky factorization when calling MixtureModel
     end
   end
 
   # generate a mixture of gaussians 
-  dist = MixtureModel(MvNormal, params)
+  dist = MixtureModel(MvNormal, parameters)
 
   # sample data 
   A = rand(dist, m)
