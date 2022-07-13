@@ -3,6 +3,7 @@ module RegularizedProblems
 using LinearAlgebra
 using Random, Requires
 using NLPModels
+using Distributions
 
 include("types.jl")
 include("bpdn_model.jl")
