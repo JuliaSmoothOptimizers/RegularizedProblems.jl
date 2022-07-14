@@ -52,11 +52,14 @@ function nnmf_model(m::Int, n::Int, k::Int)
     H_T = reshape_array(x[(m*k+1):end], (k,n))'
     mul!(gw, minusR, H_T)
     mul!(gh, W_T, minusR)
-    for i ∈ eachindex(g)
-      g[i] = gw[i] - gh[i]
+    for i ∈ eachindex(gw)
+      g[i] = gw[i]
+    end
+    for i ∈ eachindex(gh)
+      g[i+m*k] = gh[i]
     end
     g
   end
-
+  
   FirstOrderModel(obj, grad!, rand(Float64, m*k + k*n), name = "NNMF")
 end
