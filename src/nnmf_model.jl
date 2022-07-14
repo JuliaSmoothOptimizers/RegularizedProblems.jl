@@ -46,9 +46,10 @@ function nnmf_model(m::Int, n::Int, k::Int)
 
   function grad!(g, x)
     resid!(r, x)
-    minusR = -reshape_array(r, (m,n)) # alloue
-    W_T = reshape_array(x[1:(m*k)], (m,k))' # alloue
-    H_T = reshape_array(x[(m*k+1):end], (k,n))' # alloue
+    minusR = reshape_array(r, (m,n))
+    minusR .*= -1
+    W_T = reshape_array(x[1:(m*k)], (m,k))'
+    H_T = reshape_array(x[(m*k+1):end], (k,n))'
     mul!(gw, minusR, H_T)
     mul!(gh, W_T, minusR)
     for i ∈ eachindex(g)
