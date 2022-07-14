@@ -17,7 +17,7 @@ function nnmf_data(m::Int, n::Int, k::Int, T::DataType = Float64)
   # generate a mixture of gaussians 
   dist = MixtureModel(MvNormal, parameters)
   # sample data 
-  A = rand(dist, m)
+  A = rand(dist, m)'
   A[A .< 0] .= 0.0
   return A
 end
