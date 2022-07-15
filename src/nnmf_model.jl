@@ -60,6 +60,6 @@ function nnmf_model(m::Int, n::Int, k::Int)
     end
     g
   end
-  
-  FirstOrderModel(obj, grad!, rand(Float64, m*k + k*n), name = "NNMF")
+
+  FirstOrderModel(obj, grad!, rand(Float64, m*k + k*n), name = "NNMF", lvar = zeros(Float64, m*k + k*n), uvar = zeros(Float64, m*k + k*n) .= Inf)
 end
