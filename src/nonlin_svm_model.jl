@@ -14,9 +14,7 @@ function tan_data_train()
   p = randperm(length(b))[1:Int(floor(length(b)/4))]
   b = b[p]
   A = A[:, p]
-
-  x0 = ones(size(A,1))
-  A, b, x0
+  return A, b
 end
 
 function tan_data_test()
@@ -28,9 +26,7 @@ function tan_data_test()
   b0 = b0[ind]
   b0[b0.==0] .= -1
   A0 = convert(Array{Float64, 2}, A0[:, ind])
-
-  x0 = ones(size(A0,1))
-  A0, b0, x0
+  return A0, b0
 end
 
 """
@@ -59,8 +55,14 @@ With the MNIST Dataset, the dimensions are:
 An instance of a `FirstOrderModel` that represents the complete SVM problem in NLP form, and
 an instance of `FirstOrderNLSModel` that represents the nonlinear least squares in nonlinear least squares form.
 """
-function tanh_train_model()
-  A, b, x0 = tan_data_train()
+function svm_train_model(args...)
+  if length(args)<1
+    A, b = tan_data_train()
+  elseif length(args) == 1 || length(args) > 2
+    error("Must supply data matrix A and labels b!")
+  else
+    (A,b) = args
+  end
   Ahat = Diagonal(b)*A'
   r = zeros(size(Ahat,1))
   tmp = similar(r)
@@ -100,11 +102,17 @@ function tanh_train_model()
     g
   end
 
-  FirstOrderModel(obj, grad!, ones(size(x0)), name = "MNIST-tanh"), FirstOrderNLSModel(resid!, jacv!, jactv!, size(b,1), x0), resid, obj, b
+  FirstOrderModel(obj, grad!, ones(size(A,1)), name = "Nonlinear-SVM"), FirstOrderNLSModel(resid!, jacv!, jactv!, size(b,1), ones(size(A,1))), b
 end
 
-function tanh_test_model()
-  A, b, x0 = tan_data_test()
+function svm_test_model()
+  if length(args)<1
+    A, b = tan_data_test()
+  elseif length(args) == 1 || length(args) > 2
+    error("Must supply data matrix A and labels b!")
+  else
+    (A,b) = args
+  end
   Ahat = Diagonal(b)*A'
   r = zeros(size(Ahat,1))
   tmp = similar(r)
@@ -143,10 +151,5 @@ function tanh_test_model()
     g
   end
 
-  FirstOrderModel(obj, grad!, ones(size(x0)), name = "MNIST-tanh"), FirstOrderNLSModel(resid!, jacv!, jactv!, size(b,1), x0), resid, obj, b
-end
-
-function mnist_model(; kwargs...)
-  tanhnlp_train, tanhnls_train, resid_train, obj_train, sol_train = tanh_train_model()
-  tanhnlp_test,  tanhnls_test,  resid_test, obj_test,   sol_test  = tanh_test_model()
+  FirstOrderModel(obj, grad!, ones(size(A0,1)), name = "Nonlinear-SVM"), FirstOrderNLSModel(resid!, jacv!, jactv!, size(b,1), ones(size(A0,1))), b
 end
