@@ -8,6 +8,7 @@ using ShiftedProximalOperators
 
 include("types.jl")
 include("bpdn_model.jl")
+include("bpdn_constr_model.jl")
 include("nnmf_model.jl")
 
 function __init__()
