@@ -28,6 +28,7 @@ function nnmf_model(m::Int, n::Int, k::Int)
   WH = similar(A)
   gw = similar(A, (m,k))
   gh = similar(A, (k,n))
+  selected = collect((m*k+1):((m+n)*k))
 
   function resid!(r, x)
     W = reshape_array(x[1:(m*k)], (m,k))
@@ -61,5 +62,6 @@ function nnmf_model(m::Int, n::Int, k::Int)
     g
   end
 
-  FirstOrderModel(obj, grad!, rand(Float64, m*k + k*n), name = "NNMF", lvar = zeros(Float64, m*k + k*n), uvar = zeros(Float64, m*k + k*n) .= Inf)
+  FirstOrderModel(obj, grad!, rand(Float64, m*k + k*n), name = "NNMF", lvar = zeros(Float64, m*k + k*n), uvar = zeros(Float64, m*k + k*n) .= Inf),
+  selected
 end
