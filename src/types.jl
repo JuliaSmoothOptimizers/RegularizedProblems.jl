@@ -11,32 +11,36 @@ A simple subtype of `AbstractNLPModel` to represent a smooth objective.
 * `∇f! :: G <: Function`: a function such that `∇f!(g, x)` stores the gradient of the
   objective at `x` in `g`.
 """
-mutable struct FirstOrderModel{T, S, F, G} <: AbstractNLPModel{T, S}
+mutable struct FirstOrderModel{T, S, F, G, I <: Integer} <: AbstractNLPModel{T, S}
   meta::NLPModelMeta{T, S}
   counters::Counters
 
   f::F
   ∇f!::G
+  selected::UnitRange{I}
 
-  function FirstOrderModel{T, S, F, G}(
+  function FirstOrderModel{T, S, F, G, I}(
     f::F,
     ∇f!::G,
-    x::S;
+    x::S,
+    selected::UnitRange{T};
     name::AbstractString = "first-order model",
     uvar=nothing,
     lvar=nothing,
-  ) where {T, S, F <: Function, G <: Function}
+  ) where {T, S, F <: Function, G <: Function, I <: Integer}
     if isnothing(uvar) | isnothing(lvar)
       meta = NLPModelMeta(length(x), x0 = x, name = name)
     else 
       meta = NLPModelMeta(length(x), x0 = x, name = name, lvar = lvar, uvar = uvar)
     end 
-    return new{T, S, F, G}(meta, Counters(), f, ∇f!)
+    return new{T, S, F, G, I}(meta, Counters(), f, ∇f!, selected)
   end
 end
 
-FirstOrderModel(f, ∇f!, x::S; kwargs...) where {S} =
-  FirstOrderModel{eltype(S), S, typeof(f), typeof(∇f!)}(f, ∇f!, x; kwargs...)
+FirstOrderModel(f, ∇f!, x::S; kwargs...) where {S, I <: Integer} =
+  FirstOrderModel{eltype(S), S, typeof(f), typeof(∇f!), I}(f, ∇f!, x, 1:length(x); kwargs...)
+FirstOrderModel(f, ∇f!, x::S, selected::UnitRange{I}; kwargs...) where {S, I <: Integer} =
+  FirstOrderModel{eltype(S), S, typeof(f), typeof(∇f!), I}(f, ∇f!, x, selected; kwargs...)
 
 function NLPModels.obj(nlp::FirstOrderModel, x::AbstractVector)
   NLPModels.@lencheck nlp.meta.nvar x
