@@ -23,7 +23,7 @@ mutable struct FirstOrderModel{T, S, F, G, I <: Integer} <: AbstractNLPModel{T, 
     f::F,
     ∇f!::G,
     x::S,
-    selected::UnitRange{T};
+    selected::UnitRange{I};
     name::AbstractString = "first-order model",
     uvar=nothing,
     lvar=nothing,
