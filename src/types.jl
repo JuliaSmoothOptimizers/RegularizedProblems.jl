@@ -37,8 +37,8 @@ mutable struct FirstOrderModel{T, S, F, G, I <: Integer} <: AbstractNLPModel{T, 
   end
 end
 
-FirstOrderModel(f, ∇f!, x::S; kwargs...) where {S, I <: Integer} =
-  FirstOrderModel{eltype(S), S, typeof(f), typeof(∇f!), I}(f, ∇f!, x; kwargs...)
+FirstOrderModel(f, ∇f!, x::S; kwargs...) where {S} =
+  FirstOrderModel{eltype(S), S, typeof(f), typeof(∇f!), I}(f, ∇f!, x; kwargs...) where {I <: Integer}
 #FirstOrderModel(f, ∇f!, x::S, selected::UnitRange{I}; kwargs...) where {S, I <: Integer} =
 #  FirstOrderModel{eltype(S), S, typeof(f), typeof(∇f!), I}(f, ∇f!, x, selected; kwargs...)
 
