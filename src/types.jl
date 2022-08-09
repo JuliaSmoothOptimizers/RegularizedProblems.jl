@@ -22,11 +22,11 @@ mutable struct FirstOrderModel{T, S, F, G, I <: Integer} <: AbstractNLPModel{T, 
   function FirstOrderModel{T, S, F, G, I}(
     f::F,
     ∇f!::G,
-    x::S,
-    selected::UnitRange{I};
+    x::S;
     name::AbstractString = "first-order model",
-    uvar=nothing,
-    lvar=nothing,
+    uvar = nothing,
+    lvar = nothing,
+    selected::UnitRange{I} = 1:length(x)
   ) where {T, S, F <: Function, G <: Function, I <: Integer}
     if isnothing(uvar) | isnothing(lvar)
       meta = NLPModelMeta(length(x), x0 = x, name = name)
@@ -37,10 +37,10 @@ mutable struct FirstOrderModel{T, S, F, G, I <: Integer} <: AbstractNLPModel{T, 
   end
 end
 
-FirstOrderModel(f, ∇f!, x::S; kwargs...) where {S, I <: Integer} =
-  FirstOrderModel{eltype(S), S, typeof(f), typeof(∇f!), I}(f, ∇f!, x, 1:length(x); kwargs...)
-FirstOrderModel(f, ∇f!, x::S, selected::UnitRange{I}; kwargs...) where {S, I <: Integer} =
-  FirstOrderModel{eltype(S), S, typeof(f), typeof(∇f!), I}(f, ∇f!, x, selected; kwargs...)
+#FirstOrderModel(f, ∇f!, x::S; kwargs...) where {S, I <: Integer} =
+#  FirstOrderModel{eltype(S), S, typeof(f), typeof(∇f!), I}(f, ∇f!, x, 1:length(x); kwargs...)
+#FirstOrderModel(f, ∇f!, x::S, selected::UnitRange{I}; kwargs...) where {S, I <: Integer} =
+#  FirstOrderModel{eltype(S), S, typeof(f), typeof(∇f!), I}(f, ∇f!, x, selected; kwargs...)
 
 function NLPModels.obj(nlp::FirstOrderModel, x::AbstractVector)
   NLPModels.@lencheck nlp.meta.nvar x
