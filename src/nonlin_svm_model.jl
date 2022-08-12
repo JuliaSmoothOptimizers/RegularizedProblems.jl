@@ -140,7 +140,6 @@ function svm_test_model()
   function obj(x)
     resid!(r, x)
     dot(r, r) / 2
-    # sum(r)
   end
 
   function grad!(g, x)
