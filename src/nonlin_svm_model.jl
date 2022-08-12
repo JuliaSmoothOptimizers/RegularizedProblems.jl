@@ -73,7 +73,8 @@ function svm_train_model(args...)
     r
   end
   function resid(x)
-    return 1 .- tanh.(Ahat * x)
+    r_ = similar(r)
+    resid!(r_, x)
   end
 
   function jacv!(Jv, x, v)
