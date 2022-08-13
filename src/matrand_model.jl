@@ -1,8 +1,8 @@
 export mat_rand_model
 
 function mat_rand(m::Int, n::Int, r::Int, sr::Float64, va::Float64, vb::Float64, c::Float64)
-  xl = Array(rand(Uniform(-0.3, 0.1), m, r))
-  xr = Array(rand(Uniform(-0.3, 0.1), n, r))
+  xl = rand(Uniform(-0.1, 0.3), m, r)
+  xr = rand(Uniform(-0.1, 0.3), n, r)
   xs = xl * xr'
   Ω = findall(<(sr), rand(m, n))
   B = xs[Ω]
@@ -16,7 +16,7 @@ function mat_rand_model(m::Int, n::Int, r::Int, sr::Float64, va::Float64, vb::Fl
 
   function resid!(res, x)
     res .= zeros(m, n)
-    res[Ω] .= B .- reshape_array(x, (m, n))[Ω]
+    res[Ω] .= reshape_array(x, (m, n))[Ω] .- B
     vec(res)
   end
 
@@ -27,10 +27,5 @@ function mat_rand_model(m::Int, n::Int, r::Int, sr::Float64, va::Float64, vb::Fl
 
   grad!(r, x) = resid!(reshape_array(r, (m, n)), x)
 
-  function REL(x)
-    rel = sqrt(norm(x - reshape_array(xs, (m * n, 1))) / (m * n))
-    rel
-  end
-
-  return FirstOrderModel(obj, grad!, rand(Float64, m * n), name = "MATRAND"), REL, xs, Ω
+  return FirstOrderModel(obj, grad!, rand(Float64, m * n), name = "MATRAND"), xs, Ω
 end
