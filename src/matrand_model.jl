@@ -27,5 +27,5 @@ function mat_rand_model(m::Int, n::Int, r::Int, sr::Float64, va::Float64, vb::Fl
 
   grad!(r, x) = resid!(reshape_array(r, (m, n)), x)
 
-  return FirstOrderModel(obj, grad!, rand(Float64, m * n), name = "MATRAND"), xs, Ω
+  return FirstOrderModel(obj, grad!, rand(Float64, m * n), name = "MATRAND"), xs, B
 end
