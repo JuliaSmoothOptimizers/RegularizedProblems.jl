@@ -6,7 +6,7 @@ function mat_rand(m::Int, n::Int, r::Int, sr::Float64, va::Float64, vb::Float64,
   xs = xl * xr'
   Ω = findall(<(sr), rand(m, n))
   B = xs[Ω]
-  B = (1 - c) * add_gauss(B, va, 0) + c * add_gauss(B, vb, 0)
+  B = (1 - c) * add_gauss(B, va, 0; clip = true) + c * add_gauss(B, vb, 0; clip = true)
   return xs, B, Ω
 end
 
