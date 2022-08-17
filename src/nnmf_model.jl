@@ -37,12 +37,12 @@ function nnmf_model(m::Int, n::Int, k::Int)
     for i ∈ eachindex(r)
       r[i] = A[i] - WH[i]
     end
-    r
+    return r
   end
 
   function obj(x)
     resid!(r, x)
-    dot(r, r) / 2
+    return dot(r, r) / 2
   end
 
   function grad!(g, x)
@@ -59,12 +59,12 @@ function nnmf_model(m::Int, n::Int, k::Int)
     for i ∈ eachindex(gh)
       g[i+m*k] = gh[i]
     end
-    g
+    return g
   end
 
-  FirstOrderModel(obj,
+  return FirstOrderModel(obj,
                   grad!,
-                  10*rand(Float64, m*k + k*n),
+                  rand(Float64, m*k + k*n),
                   name = "NNMF",
                   lvar = zeros(Float64, m*k + k*n),
                   uvar = zeros(Float64, m*k + k*n) .= Inf,

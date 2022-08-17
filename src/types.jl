@@ -39,8 +39,6 @@ end
 
 FirstOrderModel(f, ∇f!, x::S; kwargs...) where {S} =
   FirstOrderModel{eltype(S), S, typeof(f), typeof(∇f!)}(f, ∇f!, x; kwargs...)
-#FirstOrderModel(f, ∇f!, x::S, selected::UnitRange{I}; kwargs...) where {S, I <: Integer} =
-#  FirstOrderModel{eltype(S), S, typeof(f), typeof(∇f!), I}(f, ∇f!, x, selected; kwargs...)
 
 function NLPModels.obj(nlp::FirstOrderModel, x::AbstractVector)
   NLPModels.@lencheck nlp.meta.nvar x
