@@ -1,4 +1,4 @@
-#module RegularizedProblems
+module RegularizedProblems
 
 using LinearAlgebra
 using Random, Requires
@@ -19,4 +19,4 @@ function __init__()
   end
 end
 
-#end
+end
