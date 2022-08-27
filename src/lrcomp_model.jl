@@ -5,8 +5,8 @@ function lrcomp_data(m::Int, n::Int; T::DataType = Float64)
   A
 end
 
-function lrcomp_model(m::Int, n::Int)
-  A = lrcomp_data(m, n)
+function lrcomp_model(m::Int, n::Int; T::DataType = Float64)
+  A = lrcomp_data(m, n, T = T)
   r = vec(similar(A))
 
   function resid!(r, x)
@@ -16,6 +16,11 @@ function lrcomp_model(m::Int, n::Int)
     r
   end
 
+  function jprod_resid!(Jv, x, v)
+    Jv .= v
+    Jv
+  end
+
   function obj(x)
     resid!(r, x)
     dot(r, r) / 2
@@ -23,5 +28,8 @@ function lrcomp_model(m::Int, n::Int)
 
   grad!(r, x) = resid!(r, x)
 
-  FirstOrderModel(obj, grad!, rand(T, m * n), name = "LRCOMP")
+  x0 = rand(T, m * n)
+  FirstOrderModel(obj, grad!, x0, name = "LRCOMP"),
+  FirstOrderNLSModel(resid!, jprod_resid!, jprod_resid!, m * n, x0, name = "LRCOMP-LS"),
+  vec(A)
 end
