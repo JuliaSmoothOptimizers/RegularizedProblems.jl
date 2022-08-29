@@ -26,7 +26,7 @@ mutable struct FirstOrderModel{T, S, F, G, I <: Integer, V <: AbstractVector{I}}
     name::AbstractString = "first-order model",
     uvar = nothing,
     lvar = nothing,
-    selected::UnitRange{I} = 1:length(x)
+    selected::AbstractVector{I} = 1:length(x)
   ) where {T, S, F <: Function, G <: Function, I <: Integer}
     if isnothing(uvar) | isnothing(lvar)
       meta = NLPModelMeta(length(x), x0 = x, name = name)
