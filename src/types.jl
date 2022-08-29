@@ -17,7 +17,7 @@ mutable struct FirstOrderModel{T, S, F, G, I <: Integer, V <: AbstractVector{I}}
 
   f::F
   ∇f!::G
-  selected::UnitRange{I}
+  selected::V
 
   function FirstOrderModel{T, S, F, G}(
     f::F,
