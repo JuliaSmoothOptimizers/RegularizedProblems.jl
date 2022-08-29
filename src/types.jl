@@ -33,7 +33,7 @@ mutable struct FirstOrderModel{T, S, F, G, I <: Integer, V <: AbstractVector{I}}
     else 
       meta = NLPModelMeta(length(x), x0 = x, name = name, lvar = lvar, uvar = uvar)
     end 
-    return new{T, S, F, G, I}(meta, Counters(), f, ∇f!, selected)
+    return new{T, S, F, G, I, typeof(selected)}(meta, Counters(), f, ∇f!, selected)
   end
 end
 
