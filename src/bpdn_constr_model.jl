@@ -40,6 +40,6 @@ function bpdn_constr_model(args...)
     g
   end
 
-  FirstOrderModel(obj, grad!, zero(x0), name = "BPDN-constrained", lvar = zero(x0), uvar = zero(x0) .= Inf),
+  FirstOrderModel(obj, grad!, zero(x0), name = "BPDN-constrained", lvar = zero(x0), uvar = fill!(Inf, similar(x0))),
   x0
 end

@@ -1,10 +1,10 @@
 export nnmf_model
 
 function nnmf_data(m::Int, n::Int, k::Int, T::DataType = Float64)
-  parameters = [(zeros(Float64,n), zeros(Float64,(n,n))) for i in 1:k] 
+  parameters = [(zeros(T,n), zeros(T,(n,n))) for i in 1:k] 
   # generate mean vectors of the k clusters
   d = rand(1:k,n)
-  v = convert(Vector{Float64},rand(1:3,n))
+  v = convert(Vector{T},rand(1:3,n))
   for i in 1:n
     parameters[d[i]][1][i] = v[i]
   end
@@ -64,9 +64,9 @@ function nnmf_model(m::Int, n::Int, k::Int)
 
   return FirstOrderModel(obj,
                   grad!,
-                  3*rand(Float64, m*k + k*n),
+                  3*rand(eltype(A), k*(m+n)),
                   name = "NNMF",
-                  lvar = zeros(Float64, m*k + k*n),
-                  uvar = zeros(Float64, m*k + k*n) .= Inf,
+                  lvar = zeros(eltype(A), k*(m+n)),
+                  uvar = fill!(Inf, zeros(eltype(A), k*(m+n))),
                   selected = selected)
 end
