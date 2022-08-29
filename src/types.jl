@@ -11,7 +11,7 @@ A simple subtype of `AbstractNLPModel` to represent a smooth objective.
 * `∇f! :: G <: Function`: a function such that `∇f!(g, x)` stores the gradient of the
   objective at `x` in `g`.
 """
-mutable struct FirstOrderModel{T, S, F, G, I <: Integer} <: AbstractNLPModel{T, S}
+mutable struct FirstOrderModel{T, S, F, G, I <: Integer, V <: AbstractVector{I}} <: AbstractNLPModel{T, S}
   meta::NLPModelMeta{T, S}
   counters::Counters
 
