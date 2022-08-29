@@ -4,7 +4,6 @@ using LinearAlgebra
 using Random, Requires
 using NLPModels
 using Distributions
-using ShiftedProximalOperators
 
 include("types.jl")
 include("bpdn_model.jl")
