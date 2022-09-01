@@ -5,7 +5,6 @@ function group_lasso_data(m::Int, n::Int, g::Int, ag::Int, noise::Float64 = 0.01
   (m ≤ n) || error("number of rows ($m) should be ≤ number of columns ($n)")
   (mod(n, g) == 0) || error("number of groups ($g) must divide evenly into number of rows ($n)")
   (ag ≤ g) || error("number of active groups ($ag) must be smaller than the number of groups ($g)")
-  # (k ≤ Int(n/g)) || error("number of sparse points ($k) must be smaller than the number of points in each group ($(n/g))")
 
   x0 = zeros(n)
   active_groups = sort(randperm(g)[1:ag]) # pick out active groups
@@ -14,9 +13,6 @@ function group_lasso_data(m::Int, n::Int, g::Int, ag::Int, noise::Float64 = 0.01
   indset = zeros(Int, g, group_eles)
   for i = 1:g
     if sum(i .== active_groups) > 0
-      # k = rand(big.(1:group_eles)) # generate number of sparse points in active group
-      # p = randperm(group_eles)[1:k] # get list of those sparse points
-      # xg[p] = sign.(randn(k)) # create sparse signal
       xg = sign(randn()) .*ones(group_eles,)
       ind = Array(1:group_eles) .+ (group_eles * (i-1)) # get index for active group
       x0[ind] = xg # put sparse signal in the main matrix
@@ -49,7 +45,8 @@ vector following a normal distribution with mean zero and standard deviation σ.
 
 * `m :: Int`: the number of rows of A
 * `n :: Int`: the number of columns of A (with `n` ≥ `m`)
-* `k :: Int`: the number of nonzero elements in x̄
+* `g :: Int : the number of groups`
+* `ag :: Int`: the number of active groups
 * `noise :: Float64`: noise amount ϵ (default: 0.01).
 
 The second form calls the first form with arguments
@@ -62,6 +59,7 @@ The second form calls the first form with arguments
 
 An instance of a `FirstOrderModel` that represents the basis-pursuit denoise problem
 and the exact solution x̄.
+Also returns true x, number of groups g, active groups (which ones in g), and active group indices (of x)
 """
 function group_lasso_model(args...)
   A, b, b0, x0, g, active_groups, indset = group_lasso_data(args...)
@@ -93,6 +91,7 @@ end
 
 Return an instance of a `FirstOrderNLSModel` that represents the basis-pursuit
 denoise problem explicitly as a least-squares problem and the exact solution x̄.
+Also returns true x, number of groups g, active groups (which ones in g), and active group indices (of x)
 
 See the documentation of `group_lasso_model()` for more information and a
 description of the arguments.
