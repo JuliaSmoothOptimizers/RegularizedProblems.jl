@@ -133,3 +133,12 @@ end
   @test length(findall(x -> x .!= 1, sol)) == 1028
   @test length(findall(x -> x .!= -1, sol)) == 1135
 end
+
+@testset "NNMF" begin
+  # TODO: complete tests after NLS model has been implemented
+  model, sol = nnmf_model()
+  @test typeof(model) <: FirstOrderModel
+  @test typeof(sol) == typeof(model.meta.x0)
+  @test all(model.meta.lvar .== 0)
+  @test all(model.meta.uvar .== Inf)
+end
