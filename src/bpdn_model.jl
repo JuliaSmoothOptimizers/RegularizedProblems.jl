@@ -41,12 +41,18 @@ The second form calls the first form with arguments
     n = 512 * compound
     k =  10 * compound
 
+## Keyword arguments
+
+* `bounds :: Bool`: whether or not to include nonnegativity bounds in the model (default: false).
+
 ## Return Value
 
 An instance of a `FirstOrderModel` and of a `FirstOrderNLSModel` that represent the same
 basis-pursuit denoise problem, and the exact solution x̄.
+
+If `bounds == true`, the positive part of x̄ is returned.
 """
-function bpdn_model(args...)
+function bpdn_model(args...; bounds::Bool = false)
   A, b, b0, x0 = bpdn_data(args...)
   r = similar(b)
 
@@ -70,7 +76,17 @@ function bpdn_model(args...)
     g
   end
 
-  FirstOrderModel(obj, grad!, zero(x0), name = "BPDN"),
-  FirstOrderNLSModel(resid!, jprod_resid!, jtprod_resid!, size(A, 1), zero(x0), name = "BPDN-LS"),
+  nlpmodel_kwargs = Dict{Symbol, Any}(:name => bounds ? "BPDNpos" : "BPDN")
+  nlsmodel_kwargs = Dict{Symbol, Any}(:name => bounds ? "BPDN-LS_pos" : "BPDN-LS")
+  if bounds
+    nlpmodel_kwargs[:lvar] = zero(x0)
+    nlpmodel_kwargs[:uvar] = fill!(similar(x0), Inf)
+    nlsmodel_kwargs[:lvar] = zero(x0)
+    nlsmodel_kwargs[:uvar] = fill!(similar(x0), Inf)
+    x0[x0 .< 0] .= 0
+  end
+
+  FirstOrderModel(obj, grad!, zero(x0); nlpmodel_kwargs...),
+  FirstOrderNLSModel(resid!, jprod_resid!, jtprod_resid!, size(A, 1), zero(x0); nlsmodel_kwargs...),
   x0
 end

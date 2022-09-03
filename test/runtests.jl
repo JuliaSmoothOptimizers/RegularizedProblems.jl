@@ -25,6 +25,17 @@ using RegularizedProblems
   @test all(g .≈ JtF)
 end
 
+@testset "BPDN with bounds" begin
+  model, nls_model, sol = bpdn_model(; bounds = true)
+  @test all(sol .≥ 0)
+  @test has_bounds(model)
+  @test all(model.meta.lvar .== 0)
+  @test all(model.meta.uvar .== Inf)
+  @test has_bounds(nls_model)
+  @test all(nls_model.meta.lvar .== 0)
+  @test all(nls_model.meta.uvar .== Inf)
+end
+
 @testset "FH" begin
   model, nls_model, sol = fh_model()
   @test typeof(model) <: ADNLPModel
