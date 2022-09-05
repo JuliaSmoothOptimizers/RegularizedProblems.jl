@@ -1,5 +1,5 @@
 using LinearAlgebra, Test
-using ADNLPModels, DifferentialEquations, NLPModels
+using ADNLPModels, DifferentialEquations, NLPModels, MLDatasets
 using RegularizedProblems
 
 function test_well_defined(model, nls_model, sol)
@@ -89,9 +89,19 @@ end
 
 @testset "SVM-Train" begin
   nlp_train,nls_train,sol = svm_train_model()
-  @test typeof(nlp_train) <: ADNLPModel
-  @test typeof(nls_train) <: ADNLSModel
-  @test typeof(sol) == Vector{Float64}
+  @test typeof(nlp_train) <: FirstOrderModel
+  @test typeof(nls_train) <: FirstOrderNLSModel
+  @test typeof(sol) == Vector{Int64}
+
+
+  x = nlp_train.meta.x0
+  f = obj(nlp_train, x)
+  F = residual(nls_train, x)
+  @test f ≈ dot(F, F) / 2
+
+  g = grad(nlp_train, x)
+  JtF = jtprod_residual(nls_train, x, F)
+  @test all(g .≈ JtF)
   ### below is TBD
   # @test model.meta.nvar == 5
   # @test model.nls_meta.nequ == 202
@@ -101,9 +111,18 @@ end
 
 @testset "SVM-Test" begin
   nlp_test,nls_test,sol = svm_test_model()
-  @test typeof(nlp_test) <: ADNLPModel
-  @test typeof(nls_test) <: ADNLSModel
-  @test typeof(sol) == Vector{Float64}
+  @test typeof(nlp_test) <: FirstOrderModel
+  @test typeof(nls_test) <: FirstOrderNLSModel
+  @test typeof(sol) == Vector{Int64}
+
+  x = nlp_test.meta.x0
+  f = obj(nlp_test, x)
+  F = residual(nls_test, x)
+  @test f ≈ dot(F, F) / 2
+
+  g = grad(nlp_test, x)
+  JtF = jtprod_residual(nls_test, x, F)
+  @test all(g .≈ JtF)
   ### Below is TBD
   # @test model.meta.nvar == 5
   # @test model.nls_meta.nequ == 202
