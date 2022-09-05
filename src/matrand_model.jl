@@ -40,7 +40,7 @@ function matrix_completion_model(xs, B, ω)
   x0 = rand(eltype(B), m * n)
   FirstOrderModel(obj, grad!, x0, name = "MATRAND"),
   FirstOrderNLSModel(resid!, jprod_resid!, jprod_resid!, m * n, x0, name = "MATRAND-LS"),
-  xs
+  vec(xs)
 end
 
 function random_matrix_completion_model(
