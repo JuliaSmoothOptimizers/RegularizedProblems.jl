@@ -43,6 +43,34 @@ function matrix_completion_model(xs, B, ω)
   xs
 end
 
+"""
+    model, nls_model, sol = random_matrix_completion_model(args...)
+
+Return an instance of an `NLPModel` and an instance of an `NLSModel` representing
+the same matrix completion problem, i.e., the square linear least-squares objective
+
+   ½ ‖P(X - A)‖²
+
+in the Frobenius norm, where X is the unknown image represented as an m x n matrix,
+A is a fixed image, and the operator P only retains a certain subset of pixels of
+X and A.
+
+## Arguments
+
+* `m :: Int`: the number of rows of X and A
+* `n :: Int`: the number of columns of X and A
+* `r :: Int`: the desired rank of A
+* `sr :: AbstractFloat`: a threshold between 0 and 1 used to determine the set of pixels
+  retained by the operator P
+* `va :: AbstractFloat`: the variance of a first Gaussian perturbation to be applied to A
+* `vb :: AbstractFloat`: the variance of a second Gaussian perturbation to be applied to A
+* `c :: AbstractFloat`: the coefficient of the convex combination of the two Gaussian perturbations.
+
+## Return Value
+
+An instance of a `FirstOrderModel` and of a `FirstOrderNLSModel` that represent the same
+matrix completion problem, and the exact solution.
+"""
 function random_matrix_completion_model(
   m::Int,
   n::Int,
@@ -69,6 +97,14 @@ function perturb(I, c = 0.8, p = 0.8)
   X, B, ω
 end
 
+"""
+    model, nls_model, sol = MIT_matrix_completion_model(args...)
+
+A special case of matrix completion problem in which the exact image is a noisy
+MIT logo.
+
+See the documentation of `random_matrix_completion_model()` for more information.
+"""
 function MIT_matrix_completion_model()
   I = ones(256, 256)
   I[:, 1:20] .= 0.1
