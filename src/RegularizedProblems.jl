@@ -17,6 +17,9 @@ function __init__()
       include("fh_model.jl")
     end
   end
+  @require MLDatasets = "eb30cadb-4394-5ae3-aed4-317e484a6458" begin
+    include("nonlin_svm_model.jl")
+  end
 end
 
 end
