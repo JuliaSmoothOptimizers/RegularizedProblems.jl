@@ -14,3 +14,5 @@ task:
     - cirrusjl build
   test_script:
     - cirrusjl test
+      env:
+        DATADEPS_ALWAYS_ACCEPT: true
