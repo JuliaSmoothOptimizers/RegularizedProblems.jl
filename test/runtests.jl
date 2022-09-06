@@ -88,11 +88,10 @@ end
 end
 
 @testset "SVM-Train" begin
-  nlp_train,nls_train,sol = svm_train_model()
+  nlp_train, nls_train, sol = svm_train_model()
   @test typeof(nlp_train) <: FirstOrderModel
   @test typeof(nls_train) <: FirstOrderNLSModel
   @test typeof(sol) == Vector{Int64}
-
 
   x = nlp_train.meta.x0
   f = obj(nlp_train, x)
@@ -110,7 +109,7 @@ end
 end
 
 @testset "SVM-Test" begin
-  nlp_test,nls_test,sol = svm_test_model()
+  nlp_test, nls_test, sol = svm_test_model()
   @test typeof(nlp_test) <: FirstOrderModel
   @test typeof(nls_test) <: FirstOrderNLSModel
   @test typeof(sol) == Vector{Int64}
