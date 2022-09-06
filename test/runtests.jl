@@ -99,7 +99,6 @@ end
   @test all(nlp_train.meta.x0 .== 1)
   @test length(findall(x -> x .!= -1, sol)) == 6742
   @test length(findall(x -> x .!= 1, sol)) == 6265
-
 end
 
 @testset "SVM-Test" begin
