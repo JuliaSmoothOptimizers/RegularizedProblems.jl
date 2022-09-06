@@ -1,23 +1,22 @@
 export group_lasso_model
 
 function group_lasso_data(m::Int, n::Int, g::Int, ag::Int, noise::Float64 = 0.01)
-
   (m ≤ n) || error("number of rows ($m) should be ≤ number of columns ($n)")
   (mod(n, g) == 0) || error("number of groups ($g) must divide evenly into number of rows ($n)")
   (ag ≤ g) || error("number of active groups ($ag) must be smaller than the number of groups ($g)")
 
   x0 = zeros(n)
   active_groups = sort(randperm(g)[1:ag]) # pick out active groups
-  group_eles = Int(n/g) # get number of elements in a group
+  group_eles = Int(n / g) # get number of elements in a group
   xg = zeros(group_eles)
   indset = zeros(Int, g, group_eles)
   for i = 1:g
     if sum(i .== active_groups) > 0
-      xg = sign(randn()) .*ones(group_eles,)
-      ind = Array(1:group_eles) .+ (group_eles * (i-1)) # get index for active group
+      xg = sign(randn()) .* ones(group_eles)
+      ind = Array(1:group_eles) .+ (group_eles * (i - 1)) # get index for active group
       x0[ind] = xg # put sparse signal in the main matrix
     end
-    indset[i,:] = Array(1:group_eles) .+ (group_eles * (i-1))
+    indset[i, :] = Array(1:group_eles) .+ (group_eles * (i - 1))
   end
   Q, _ = qr(randn(n, m))
   A = Array(Array(Q)')
@@ -87,5 +86,17 @@ function group_lasso_model(args...)
   jprod_resid!(Jv, x, v) = mul!(Jv, A, v)
   jtprod_resid!(Jtv, x, v) = mul!(Jtv, A', v)
 
-  FirstOrderModel(obj, grad!, zero(x0), name = "Group Lasso"), FirstOrderNLSModel(resid!, jprod_resid!, jtprod_resid!, size(A, 1), zero(x0), name = "Group-Lasso-LS"), x0, g, active_groups, indset
+  FirstOrderModel(obj, grad!, zero(x0), name = "Group Lasso"),
+  FirstOrderNLSModel(
+    resid!,
+    jprod_resid!,
+    jtprod_resid!,
+    size(A, 1),
+    zero(x0),
+    name = "Group-Lasso-LS",
+  ),
+  x0,
+  g,
+  active_groups,
+  indset
 end
