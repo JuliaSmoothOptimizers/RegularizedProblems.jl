@@ -1,6 +1,6 @@
 using LinearAlgebra, Test
 using ADNLPModels, DifferentialEquations, NLPModels, MLDatasets
-using RegularizedProblems, ReverseADNLSModels
+using RegularizedProblems
 
 function test_well_defined(model, nls_model, sol)
   @test typeof(model) <: FirstOrderModel
@@ -116,27 +116,27 @@ end
   @test length(findall(x -> x .!= -1, sol)) == 1135
 end
 
-function comp_derivs(nlp, nls, sol)
-  nls_train_ad = ADNLSModel(nls.residual(), ones(size(nls.meta.x0)),size(sol,1) + size(nls.meta.x0,1))
-  # f = ReverseADNLSModel(nls_train.residual!(), size(sol_train,1), ones(size(model_train.meta.x0)), name = "Dominique")
-  fad = ReverseADNLSModel(nls.residual!(), size(sol_train,1), ones(size(model_train.meta.x0)), name = "ADNLS")
+# function comp_derivs(nlp, nls, sol)
+#   nls_train_ad = ADNLSModel(nls.residual(), ones(size(nls.meta.x0)),size(sol,1) + size(nls.meta.x0,1))
+#   # f = ReverseADNLSModel(nls_train.residual!(), size(sol_train,1), ones(size(model_train.meta.x0)), name = "Dominique")
+#   fad = ReverseADNLSModel(nls.residual!(), size(sol_train,1), ones(size(model_train.meta.x0)), name = "ADNLS")
 
-  xk = 10*randn(size(fk.meta.x0));
-  v = 10*randn(size(xk));
-  Jvac = zeros(size(sol_train));
-  Jvac_ad = similar(Jvac);
-  # @show @benchmark jprod_residual!($fk, $xk, $v, $Jvac)
-  # @show @benchmark jprod_residual!($fad, $xk, $v, $Jvac_ad)
+#   xk = 10*randn(size(fk.meta.x0));
+#   v = 10*randn(size(xk));
+#   Jvac = zeros(size(sol_train));
+#   Jvac_ad = similar(Jvac);
+#   # @show @benchmark jprod_residual!($fk, $xk, $v, $Jvac)
+#   # @show @benchmark jprod_residual!($fad, $xk, $v, $Jvac_ad)
 
-  @test norm(Jvac - Jvac_ad) < eps()
+#   @test norm(Jvac - Jvac_ad) < eps()
 
-  v = 10*randn(size(sol_train));
-  Jtvac = zero(xk);
-  Jtvac_ad = zero(xk);
+#   v = 10*randn(size(sol_train));
+#   Jtvac = zero(xk);
+#   Jtvac_ad = zero(xk);
 
-  # @show @benchmark jtprod_residual!($fk, $xk, $v, $Jtvac)
-  # @show @benchmark jtprod_residual!($fad, $xk, $v, $Jtvac_ad)
+#   # @show @benchmark jtprod_residual!($fk, $xk, $v, $Jtvac)
+#   # @show @benchmark jtprod_residual!($fad, $xk, $v, $Jtvac_ad)
 
-  @show norm(Jtvac - Jtvac_ad) < eps()
+#   @show norm(Jtvac - Jtvac_ad) < eps()
 
-end
+# end
