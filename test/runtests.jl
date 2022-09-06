@@ -1,6 +1,6 @@
 using LinearAlgebra, Test
 using ADNLPModels, DifferentialEquations, NLPModels, MLDatasets
-using RegularizedProblems
+using RegularizedProblems, ReverseADNLSModels
 
 function test_well_defined(model, nls_model, sol)
   @test typeof(model) <: FirstOrderModel
@@ -92,20 +92,14 @@ end
   @test typeof(nlp_train) <: FirstOrderModel
   @test typeof(nls_train) <: FirstOrderNLSModel
   @test typeof(sol) == Vector{Int64}
+  test_objectives(nlp_train, nls_train)
 
-  x = nlp_train.meta.x0
-  f = obj(nlp_train, x)
-  F = residual(nls_train, x)
-  @test f ≈ dot(F, F) / 2
+  @test nlp_train.meta.nvar == 784
+  @test nls_train.nls_meta.nequ == 13007
+  @test all(nlp_train.meta.x0 .== 1)
+  @test length(findall(x -> x .!= -1, sol)) == 6742
+  @test length(findall(x -> x .!= 1, sol)) == 6265
 
-  g = grad(nlp_train, x)
-  JtF = jtprod_residual(nls_train, x, F)
-  @test all(g .≈ JtF)
-  ### below is TBD
-  # @test model.meta.nvar == 5
-  # @test model.nls_meta.nequ == 202
-  # @test all(model.meta.x0 .== 1)
-  # @test length(findall(x -> x .!= 0, sol)) == 2
 end
 
 @testset "SVM-Test" begin
@@ -113,45 +107,36 @@ end
   @test typeof(nlp_test) <: FirstOrderModel
   @test typeof(nls_test) <: FirstOrderNLSModel
   @test typeof(sol) == Vector{Int64}
+  test_objectives(nlp_test, nls_test)
 
-  x = nlp_test.meta.x0
-  f = obj(nlp_test, x)
-  F = residual(nls_test, x)
-  @test f ≈ dot(F, F) / 2
-
-  g = grad(nlp_test, x)
-  JtF = jtprod_residual(nls_test, x, F)
-  @test all(g .≈ JtF)
-  ### Below is TBD
-  # @test model.meta.nvar == 5
-  # @test model.nls_meta.nequ == 202
-  # @test all(model.meta.x0 .== 1)
-  # @test length(findall(x -> x .!= 0, sol)) == 2
+  @test nlp_test.meta.nvar == 784
+  @test nls_test.nls_meta.nequ == 2163
+  @test all(nlp_test.meta.x0 .== 1)
+  @test length(findall(x -> x .!= 1, sol)) == 1028
+  @test length(findall(x -> x .!= -1, sol)) == 1135
 end
 
-##### Obsolete since svm_train/test_model() does not yield resid() anymore
-# function comp_derivs()
-#   nlp_train, nlp_test, sol_train = svm_train_model() #
-# nls_train = ADNLSModel(resid_train, ones(size(nls_train.meta.x0)),size(sol_train,1) + size(nls_train.meta.x0,1))
-# f = ReverseADNLSModel(resid!, size(sol_train,1), ones(size(model_train.meta.x0)), name = "Dominique")
-#   fad = ReverseADNLSModel(resid!, size(sol_train,1), ones(size(model_train.meta.x0)), name = "Dominique")
+function comp_derivs(nlp, nls, sol)
+  nls_train_ad = ADNLSModel(nls.residual(), ones(size(nls.meta.x0)),size(sol,1) + size(nls.meta.x0,1))
+  # f = ReverseADNLSModel(nls_train.residual!(), size(sol_train,1), ones(size(model_train.meta.x0)), name = "Dominique")
+  fad = ReverseADNLSModel(nls.residual!(), size(sol_train,1), ones(size(model_train.meta.x0)), name = "ADNLS")
 
-#   xk = 10*randn(size(fk.meta.x0));
-#   v = 10*randn(size(xk));
-#   Jvac = zeros(size(sol_train));
-#   Jvac_ad = similar(Jvac);
-#   @show @benchmark jprod_residual!($fk, $xk, $v, $Jvac)
-#   @show @benchmark jprod_residual!($fad, $xk, $v, $Jvac_ad)
+  xk = 10*randn(size(fk.meta.x0));
+  v = 10*randn(size(xk));
+  Jvac = zeros(size(sol_train));
+  Jvac_ad = similar(Jvac);
+  # @show @benchmark jprod_residual!($fk, $xk, $v, $Jvac)
+  # @show @benchmark jprod_residual!($fad, $xk, $v, $Jvac_ad)
 
-#   # @show norm(Jvac - Jvac_ad)
+  @test norm(Jvac - Jvac_ad) < eps()
 
-#   v = 10*randn(size(sol_train));
-#   Jtvac = zero(xk);
-#   Jtvac_ad = zero(xk);
+  v = 10*randn(size(sol_train));
+  Jtvac = zero(xk);
+  Jtvac_ad = zero(xk);
 
-#   @show @benchmark jtprod_residual!($fk, $xk, $v, $Jtvac)
-#   @show @benchmark jtprod_residual!($fad, $xk, $v, $Jtvac_ad)
+  # @show @benchmark jtprod_residual!($fk, $xk, $v, $Jtvac)
+  # @show @benchmark jtprod_residual!($fad, $xk, $v, $Jtvac_ad)
 
-#   @show norm(Jtvac - Jtvac_ad)
+  @show norm(Jtvac - Jtvac_ad) < eps()
 
-# end
+end
