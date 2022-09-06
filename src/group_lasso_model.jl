@@ -1,4 +1,4 @@
-export group_lasso_model, group_lasso_nls_model
+export group_lasso_model
 
 function group_lasso_data(m::Int, n::Int, g::Int, ag::Int, noise::Float64 = 0.01)
 
@@ -30,10 +30,10 @@ group_lasso_data(compound::Int = 1, args...) =
   group_lasso_data(200 * compound, 512 * compound, 16 * compound, 5 * compound, args...)
 
 """
-    model, sol = bpdn_model(args...)
-    model, sol = bpdn_model(compound = 1, args...)
+    model, nls_model, sol = group_lasso_model(args...)
+    model, nls_model, sol = group_lasso_model(compound = 1, args...)
 
-Return an instance of an `NLPModel` representing the basis-pursuit denoise
+Return an instance of an `NLPModel` and `NLSModel` representing the basis-pursuit denoise
 problem, i.e., the under-determined linear least-squares objective
 
    ½ ‖Ax - b‖₂²,
@@ -59,6 +59,8 @@ The second form calls the first form with arguments
 
 An instance of a `FirstOrderModel` that represents the basis-pursuit denoise problem
 and the exact solution x̄.
+An instance of a `FirstOrderNLSModel` that represents the basis-pursuit denoise problem
+and the exact solution x̄.
 Also returns true x, number of groups g, active groups (which ones in g), and active group indices (of x)
 """
 function group_lasso_model(args...)
@@ -82,32 +84,8 @@ function group_lasso_model(args...)
     g
   end
 
-  FirstOrderModel(obj, grad!, zero(x0), name = "Group Lasso"), x0, g, active_groups, indset
-end
-
-"""
-    model, sol = group_lasso_nls_model(args...)
-    model, sol = group_lasso_nls_model(compound = 1, args...)
-
-Return an instance of a `FirstOrderNLSModel` that represents the basis-pursuit
-denoise problem explicitly as a least-squares problem and the exact solution x̄.
-Also returns true x, number of groups g, active groups (which ones in g), and active group indices (of x)
-
-See the documentation of `group_lasso_model()` for more information and a
-description of the arguments.
-"""
-function group_lasso_nls_model(args...)
-  A, b, b0, x0, g, active_groups, indset = group_lasso_data(args...)
-  r = similar(b)
-
-  function resid!(r, x)
-    mul!(r, A, x)
-    r .-= b
-    r
-  end
-
   jprod_resid!(Jv, x, v) = mul!(Jv, A, v)
   jtprod_resid!(Jtv, x, v) = mul!(Jtv, A', v)
 
-  FirstOrderNLSModel(resid!, jprod_resid!, jtprod_resid!, size(A, 1), zero(x0), name = "Group-Lasso-LS"), x0, g, active_groups, indset
+  FirstOrderModel(obj, grad!, zero(x0), name = "Group Lasso"), FirstOrderNLSModel(resid!, jprod_resid!, jtprod_resid!, size(A, 1), zero(x0), name = "Group-Lasso-LS"), x0, g, active_groups, indset
 end
