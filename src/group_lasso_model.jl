@@ -33,20 +33,22 @@ group_lasso_data(compound::Int = 1, args...) =
     model, nls_model, sol = group_lasso_model(args...)
     model, nls_model, sol = group_lasso_model(compound = 1, args...)
 
-Return an instance of an `NLPModel` and `NLSModel` representing the basis-pursuit denoise
+Return an instance of an `NLPModel` and `NLSModel` representing the group-lasso
 problem, i.e., the under-determined linear least-squares objective
 
    ½ ‖Ax - b‖₂²,
 
 where A has orthonormal rows and b = A * x̄ + ϵ, x̄ is sparse and ϵ is a noise
 vector following a normal distribution with mean zero and standard deviation σ.
+Note that with this format, all groups have a the same number of elements and the number of
+groups divides evenly into the total number of elements.
 
 ## Arguments
 
 * `m :: Int`: the number of rows of A
 * `n :: Int`: the number of columns of A (with `n` ≥ `m`)
 * `g :: Int : the number of groups`
-* `ag :: Int`: the number of active groups
+* `ag :: Array{Int}`:  group-index denoting which groups are active (with `max(ag) ≤ g`), i.e. `[1, 4, 5]` when there are 7 groups
 * `noise :: Float64`: noise amount ϵ (default: 0.01).
 
 The second form calls the first form with arguments
@@ -57,11 +59,9 @@ The second form calls the first form with arguments
 
 ## Return Value
 
-An instance of a `FirstOrderModel` that represents the basis-pursuit denoise problem
-and the exact solution x̄.
-An instance of a `FirstOrderNLSModel` that represents the basis-pursuit denoise problem
-and the exact solution x̄.
-Also returns true x, number of groups g, active groups (which ones in g), and active group indices (of x)
+An instance of a `FirstOrderModel` that represents the group-lasso problem.
+An instance of a `FirstOrderNLSModel` that represents the group-lasso problem.
+Also returns true x, number of groups g, group-index denoting which groups are active, and a Matrix where rows are group indices of x
 """
 function group_lasso_model(args...)
   A, b, b0, x0, g, active_groups, indset = group_lasso_data(args...)
