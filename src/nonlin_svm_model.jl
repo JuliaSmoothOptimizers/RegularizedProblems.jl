@@ -1,26 +1,29 @@
 export svm_train_model, svm_test_model, svm_model
 
-function tan_data_train()
+function tan_data_train(args...)
   #load data
   A, b = MLDatasets.MNIST(split = :train)[:]
-  A, b = generate_data(A, b, false)
+  A, b = generate_data(A, b, args...)
   return A, b
 end
 
-function tan_data_test()
+function tan_data_test(args...)
   A, b = MLDatasets.MNIST(split = :test)[:]
-  A, b = generate_data(A, b, false)
+  A, b = generate_data(A, b, args...)
   return A, b
 end
 
-function generate_data(A, b, switch = true)
-  ind = findall(x -> x == 1 || x == 7, b)
+function generate_data(A, b, digits::Tuple{Int, Int} = (1, 7), switch::Bool = false)
+  length(digits) == 2 || error("please supply two digits only")
+  digits[1] != digits[2] || error("please supply two different digits")
+  all(0 .≤ digits .≤ 9) || error("please supply digits from 0 to 9")
+  ind = findall(x -> x ∈ digits, b)
   #reshape to matrix
   A = reshape(A, size(A, 1) * size(A, 2), size(A, 3)) ./ 255
 
   #get 0s and 1s
   b = b[ind]
-  b[b .== 7] .= -1
+  b[b .== digits[2]] .= -1
   A = convert(Array{Float64, 2}, A[:, ind])
   if switch
     p = randperm(length(b))[1:Int(floor(length(b) / 3))]
@@ -95,5 +98,5 @@ function svm_model(A, b)
   b
 end
 
-svm_train_model() = svm_model(tan_data_train()...)
-svm_test_model() = svm_model(tan_data_test()...)
+svm_train_model(args...) = svm_model(tan_data_train(args...)...)
+svm_test_model(args...) = svm_model(tan_data_test(args...)...)

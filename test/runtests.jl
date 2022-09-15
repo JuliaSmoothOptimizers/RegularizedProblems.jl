@@ -101,6 +101,9 @@ end
 end
 
 @testset "SVM-Train" begin
+  @test_throws ErrorException svm_train_model((1, 1))
+  @test_throws MethodError svm_train_model((1, 2, 3))
+  @test_throws ErrorException svm_train_model((10, -1))
   nlp_train, nls_train, sol = svm_train_model()
   @test typeof(nlp_train) <: FirstOrderModel
   @test typeof(nls_train) <: FirstOrderNLSModel
@@ -115,6 +118,9 @@ end
 end
 
 @testset "SVM-Test" begin
+  @test_throws ErrorException svm_test_model((1, 1))
+  @test_throws MethodError svm_test_model((1, 2, 3))
+  @test_throws ErrorException svm_test_model((10, -1))
   nlp_test, nls_test, sol = svm_test_model()
   @test typeof(nlp_test) <: FirstOrderModel
   @test typeof(nls_test) <: FirstOrderNLSModel
