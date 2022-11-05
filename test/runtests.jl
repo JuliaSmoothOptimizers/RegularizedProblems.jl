@@ -101,6 +101,7 @@ end
 end
 
 @testset "SVM-Train" begin
+  ENV["DATADEPS_ALWAYS_ACCEPT"] = true
   @test_throws ErrorException svm_train_model((1, 1))
   @test_throws MethodError svm_train_model((1, 2, 3))
   @test_throws ErrorException svm_train_model((10, -1))
@@ -118,6 +119,7 @@ end
 end
 
 @testset "SVM-Test" begin
+  ENV["DATADEPS_ALWAYS_ACCEPT"] = true
   @test_throws ErrorException svm_test_model((1, 1))
   @test_throws MethodError svm_test_model((1, 2, 3))
   @test_throws ErrorException svm_test_model((10, -1))
