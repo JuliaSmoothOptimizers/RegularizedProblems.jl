@@ -12,33 +12,24 @@ A simple subtype of `AbstractNLPModel` to represent a smooth objective.
   objective at `x` in `g`;
 * `x :: AbstractVector`: an initial guess.
 
-## Keyword arguments
-
-* `selected :: AbstractVector{<: Int}`: a list of variables to apply the regularizer to
-    (default: all variables).
-
-All other keyword arguments are passed through to the `NLPModelMeta` constructor.
+All keyword arguments are passed through to the `NLPModelMeta` constructor.
 """
-mutable struct FirstOrderModel{T, S, F, G, I, V} <: AbstractNLPModel{T, S}
+mutable struct FirstOrderModel{T, S, F, G} <: AbstractNLPModel{T, S}
   meta::NLPModelMeta{T, S}
   counters::Counters
 
   f::F
   ∇f!::G
-  selected::V
 
-  function FirstOrderModel{T, S, F, G, I, V}(
+  function FirstOrderModel{T, S, F, G}(
     f::F,
     ∇f!::G,
     x::S;
-    selected::AbstractVector{I} = 1:length(x),
     kwargs...,
-  ) where {T, S, F <: Function, G <: Function, I <: Integer, V <: AbstractVector{I}}
+  ) where {T, S, F <: Function, G <: Function}
     nvar = length(x)
-    slct = unique(selected)
-    @assert all(1 .≤ slct .≤ nvar)
     meta = NLPModelMeta(nvar, x0 = x; kwargs...)
-    return new{T, S, F, G, I, typeof(slct)}(meta, Counters(), f, ∇f!, slct)
+    return new{T, S, F, G}(meta, Counters(), f, ∇f!)
   end
 end
 
@@ -46,14 +37,12 @@ FirstOrderModel(
   f,
   ∇f!,
   x::S;
-  selected::V = 1:length(x),
   kwargs...,
-) where {S, I <: Integer, V <: AbstractVector{I}} =
-  FirstOrderModel{eltype(S), S, typeof(f), typeof(∇f!), I, V}(
+) where {S} =
+  FirstOrderModel{eltype(S), S, typeof(f), typeof(∇f!)}(
     f,
     ∇f!,
-    x,
-    selected = selected;
+    x;
     kwargs...,
   )
 
@@ -83,14 +72,9 @@ with a smooth residual.
 * `jtv! :: Jt <: Function`: a function such that `jtv!(u, x, v)` stores the product between the transpose of the residual Jacobian at `x` and the vector `v` in `u`;
 * `x :: AbstractVector`: an initial guess.
 
-## Keyword arguments
-
-* `selected :: AbstractVector{<: Int}`: a list of variables to apply the regularizer to
-    (default: all variables).
-
-All other keyword arguments are passed through to the `NLPModelMeta` constructor.
+All keyword arguments are passed through to the `NLPModelMeta` constructor.
 """
-mutable struct FirstOrderNLSModel{T, S, R, J, Jt, I, V} <: AbstractNLSModel{T, S}
+mutable struct FirstOrderNLSModel{T, S, R, J, Jt} <: AbstractNLSModel{T, S}
   meta::NLPModelMeta{T, S}
   nls_meta::NLSMeta{T, S}
   counters::NLSCounters
@@ -98,23 +82,19 @@ mutable struct FirstOrderNLSModel{T, S, R, J, Jt, I, V} <: AbstractNLSModel{T, S
   resid!::R
   jprod_resid!::J
   jtprod_resid!::Jt
-  selected::V
 
-  function FirstOrderNLSModel{T, S, R, J, Jt, I, V}(
+  function FirstOrderNLSModel{T, S, R, J, Jt}(
     r::R,
     jv::J,
     jtv::Jt,
     nequ::Int,
     x::S;
-    selected::AbstractVector{I} = 1:length(x),
     kwargs...,
-  ) where {T, S, R <: Function, J <: Function, Jt <: Function, I <: Integer, V <: AbstractVector{I}}
+  ) where {T, S, R <: Function, J <: Function, Jt <: Function}
     nvar = length(x)
-    slct = unique(selected)
-    @assert all(1 .≤ slct .≤ nvar)
     meta = NLPModelMeta(nvar, x0 = x; kwargs...)
     nls_meta = NLSMeta{T, S}(nequ, nvar, x0 = x)
-    return new{T, S, R, J, Jt, I, typeof(slct)}(meta, nls_meta, NLSCounters(), r, jv, jtv, slct)
+    return new{T, S, R, J, Jt}(meta, nls_meta, NLSCounters(), r, jv, jtv)
   end
 end
 
@@ -124,16 +104,14 @@ FirstOrderNLSModel(
   jtv,
   nequ::Int,
   x::S;
-  selected::V = 1:length(x),
   kwargs...,
-) where {S, I <: Integer, V <: AbstractVector{I}} =
-  FirstOrderNLSModel{eltype(S), S, typeof(r), typeof(jv), typeof(jtv), I, V}(
+) where {S} =
+  FirstOrderNLSModel{eltype(S), S, typeof(r), typeof(jv), typeof(jtv)}(
     r,
     jv,
     jtv,
     nequ,
-    x,
-    selected = selected;
+    x;
     kwargs...,
   )
 
