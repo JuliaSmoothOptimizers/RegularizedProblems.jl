@@ -70,7 +70,7 @@ function nnmf_model(m::Int = 100, n::Int = 50, k::Int = 10, T::DataType = Float6
     name = "NNMF",
     lvar = zeros(eltype(A), k * (m + n)),
     uvar = fill!(zeros(eltype(A), k * (m + n)), Inf),
-    selected = selected,
   ),
-  A[:]
+  A[:],
+  selected
 end
