@@ -138,7 +138,7 @@ end
 
 @testset "NNMF" begin
   # TODO: complete tests after NLS model has been implemented
-  model, sol = nnmf_model()
+  model, sol, selected = nnmf_model()
   @test typeof(model) <: FirstOrderModel
   @test typeof(sol) == typeof(model.meta.x0)
   @test all(model.meta.lvar .== 0)
