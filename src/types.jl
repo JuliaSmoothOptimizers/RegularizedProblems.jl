@@ -33,18 +33,8 @@ mutable struct FirstOrderModel{T, S, F, G} <: AbstractNLPModel{T, S}
   end
 end
 
-FirstOrderModel(
-  f,
-  ∇f!,
-  x::S;
-  kwargs...,
-) where {S} =
-  FirstOrderModel{eltype(S), S, typeof(f), typeof(∇f!)}(
-    f,
-    ∇f!,
-    x;
-    kwargs...,
-  )
+FirstOrderModel(f, ∇f!, x::S; kwargs...) where {S} =
+  FirstOrderModel{eltype(S), S, typeof(f), typeof(∇f!)}(f, ∇f!, x; kwargs...)
 
 function NLPModels.obj(nlp::FirstOrderModel, x::AbstractVector)
   NLPModels.@lencheck nlp.meta.nvar x
@@ -98,14 +88,7 @@ mutable struct FirstOrderNLSModel{T, S, R, J, Jt} <: AbstractNLSModel{T, S}
   end
 end
 
-FirstOrderNLSModel(
-  r,
-  jv,
-  jtv,
-  nequ::Int,
-  x::S;
-  kwargs...,
-) where {S} =
+FirstOrderNLSModel(r, jv, jtv, nequ::Int, x::S; kwargs...) where {S} =
   FirstOrderNLSModel{eltype(S), S, typeof(r), typeof(jv), typeof(jtv)}(
     r,
     jv,
