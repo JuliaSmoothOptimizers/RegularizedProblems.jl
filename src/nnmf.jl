@@ -15,14 +15,31 @@ function nnmf_data(m::Int, n::Int, k::Int, T::DataType = Float64)
       parameters[i][2][j, j] = parameters[i][1][j] > 0.0 ? 0.3 : ϵ # to avoid problems in Cholesky factorization when calling MixtureModel
     end
   end
-  # generate a mixture of gaussians 
+  # generate a mixture of gaussians
   dist = MixtureModel(MvNormal, parameters)
-  # sample data 
+  # sample data
   A = rand(dist, m)'
   A[A .< 0] .= 0
   return A
 end
 
+
+"""
+    model, Av, selected = nnmf_model(m = 100, n = 50, k = 10, T = Float64)
+
+Return an instance of an `NLPModel` representing the non-negative matrix factorization
+objective
+
+    f(W, H) = ½ ‖A - WH‖₂²,
+
+where A ∈ Rᵐˣⁿ has non-negative entries and can be separeted into k clusters, `Av = A[:]`.
+The vector of indices `selected = k*m+1: k*(m+n)` is used to indicate the components of W ∈ Rᵐˣᵏ and H ∈ Rᵏˣⁿ to apply  the regularizer to (so that the regularizer only applies to entries of H).
+
+## Arguments
+* `m :: Int`: the number of rows of A
+* `n :: Int`: the number of columns of A (with `n` ≥ `m`)
+* `k :: Int`: the number of clusters
+"""
 function nnmf_model(m::Int = 100, n::Int = 50, k::Int = 10, T::DataType = Float64)
   A = nnmf_data(m, n, k, T)
   r = similar(A, m * n)
