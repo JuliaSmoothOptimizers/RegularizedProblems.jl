@@ -23,6 +23,25 @@ function nnmf_data(m::Int, n::Int, k::Int, T::DataType = Float64)
   return A
 end
 
+
+"""
+    model, Av, selected = nnmf_model(m = 100, n = 50, k = 10, T = Float64)
+
+Return an instance of an `NLPModel` representing the non-negative matrix factorization
+objective
+
+    f(W, H) = ½ ‖A - WH‖₂²,
+
+where A has non-negative entries and can be separeted into k clusters, `Av = A[:]`, and selected,
+a vector of indexes `selected = k*m+1: k* (m+n)` is used to indicate the compements of (W, H) to apply 
+the regularizer to (so that the regulariazed only uses H entries).
+We have A ∈ Rᵐˣⁿ, W ∈ Rᵐˣᵏ, H ∈ Rᵏˣⁿ.
+
+## Arguments
+* `m :: Int`: the number of rows of A
+* `n :: Int`: the number of columns of A (with `n` ≥ `m`)
+* `k :: Int`: the number of clusters
+"""
 function nnmf_model(m::Int = 100, n::Int = 50, k::Int = 10, T::DataType = Float64)
   A = nnmf_data(m, n, k, T)
   r = similar(A, m * n)
