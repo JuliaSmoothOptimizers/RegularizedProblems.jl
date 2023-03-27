@@ -32,10 +32,8 @@ objective
 
     f(W, H) = ½ ‖A - WH‖₂²,
 
-where A has non-negative entries and can be separeted into k clusters, `Av = A[:]`, and selected,
-a vector of indexes `selected = k*m+1: k* (m+n)` is used to indicate the compements of (W, H) to apply 
-the regularizer to (so that the regulariazed only uses H entries).
-We have A ∈ Rᵐˣⁿ, W ∈ Rᵐˣᵏ, H ∈ Rᵏˣⁿ.
+where A ∈ Rᵐˣⁿ has non-negative entries and can be separated into k clusters, `Av = A[:]`.
+The vector of indices `selected = k*m+1: k* (m+n)` is used to indicate the components of W ∈ Rᵐˣᵏ and H ∈ Rᵏˣⁿ to apply  the regularizer to (so that the regularizer only applies to entries of H).
 
 ## Arguments
 * `m :: Int`: the number of rows of A
