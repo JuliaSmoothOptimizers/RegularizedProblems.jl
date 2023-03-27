@@ -1,5 +1,5 @@
 using Documenter
-using ADNLPModels, DifferentialEquations, MLDatasets
+using MLDatasets
 using RegularizedProblems
 
 makedocs(

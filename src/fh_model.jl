@@ -61,29 +61,6 @@ function FH_smooth_term()
   return data, simulate, residual, misfit, x0
 end
 
-"""
-    fh_model(; kwargs...)
-
-Return an instance of an `NLPModel` and an instance of an `NLSModel` representing
-the same Fitzhugh-Nagumo problem, i.e., the over-determined nonlinear
-least-squares objective
-
-   ½ ‖F(x)‖₂²,
-
-where F: ℝ⁵ → ℝ²⁰² represents the fitting error between a simulation of the
-Fitzhugh-Nagumo model with parameters x and a simulation of the Van der Pol
-oscillator with fixed, but unknown, parameters.
-
-## Keyword Arguments
-
-All keyword arguments are passed directly to the `ADNLPModel` (or `ADNLSModel`)
-constructure, e.g., to set the automatic differentiation backend.
-
-## Return Value
-
-An instance of an `ADNLPModel` that represents the Fitzhugh-Nagumo problem, an instance
-of an `ADNLSModel` that represents the same problem, and the exact solution.
-"""
 function fh_model(; kwargs...)
   data, simulate, resid, misfit, x0 = FH_smooth_term()
   nequ = 202
