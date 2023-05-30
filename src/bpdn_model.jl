@@ -1,10 +1,15 @@
 export bpdn_model, bpdn_nls_model
 
-function bpdn_data(m::Int, n::Int, k::Int, noise::Float64 = 0.01)
+function bpdn_data(m::Int, n::Int, k::Int, noise::Float64 = 0.01; bounds::Bool = false)
   m ≤ n || error("number of rows ($m) should be ≤ number of columns ($n)")
   x0 = zeros(n)
   p = randperm(n)[1:k]
-  x0[p[1:k]] = sign.(randn(k)) # create sparse signal
+  # create sparse signal
+  if bounds
+    x0[p[1:k]] .= 1
+  else
+    x0[p[1:k]] = sign.(randn(k))
+  end
   Q, _ = qr(randn(n, m))
   A = Array(Array(Q)')
   b0 = A * x0
@@ -12,8 +17,8 @@ function bpdn_data(m::Int, n::Int, k::Int, noise::Float64 = 0.01)
   A, b, b0, x0
 end
 
-bpdn_data(compound::Int = 1, args...) =
-  bpdn_data(200 * compound, 512 * compound, 10 * compound, args...)
+bpdn_data(compound::Int = 1, args...; bounds::Bool = false) =
+  bpdn_data(200 * compound, 512 * compound, 10 * compound, args...; bounds = bounds)
 
 """
     model, nls_model, sol = bpdn_model(args...)
@@ -53,7 +58,7 @@ basis-pursuit denoise problem, and the exact solution x̄.
 If `bounds == true`, the positive part of x̄ is returned.
 """
 function bpdn_model(args...; bounds::Bool = false)
-  A, b, b0, x0 = bpdn_data(args...)
+  A, b, b0, x0 = bpdn_data(args...; bounds = bounds)
   r = similar(b)
 
   function resid!(r, x)
