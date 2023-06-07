@@ -139,10 +139,16 @@ end
 @testset "NNMF" begin
   # TODO: complete tests after NLS model has been implemented
   m, n, k = 100, 50, 10
-  model, sol, selected = nnmf_model(m, n, k)
+  model, nls_model, sol, selected = nnmf_model(m, n, k)
   @test selected == (m * k + 1):((m + n) * k)
   @test typeof(model) <: FirstOrderModel
   @test typeof(sol) == typeof(model.meta.x0)
+  @test typeof(nls_model) <: FirstOrderNLSModel
+  @test model.meta.nvar == nls_model.meta.nvar
+  @test nls_model.nls_meta.nequ == m * n
   @test all(model.meta.lvar .== 0)
   @test all(model.meta.uvar .== Inf)
+  @test all(nls_model.meta.lvar .== 0)
+  @test all(nls_model.meta.uvar .== Inf)
+  test_objectives(model, nls_model)
 end
