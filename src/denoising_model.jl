@@ -2,7 +2,7 @@ export denoising_model
 
 include("denoising_data.jl")
 
-function denoing_model(shape, shape_p, KERNEL_SIZE, KERNEL_TYPE, KERNEL_SIGMA = 1.5)
+function denoising_model(shape, shape_p, KERNEL_SIZE, KERNEL_TYPE, KERNEL_SIGMA = 1.5)
   sigma = 10^-3
   cameraman_image = load("images/cameraman.png")
   x_t = vec(Float64.(cameraman_image))
