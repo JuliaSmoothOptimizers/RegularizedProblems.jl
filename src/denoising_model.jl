@@ -5,7 +5,7 @@ export denoising_model
 
 include("denoising_data.jl")
 
-function denoising_model(shape, shape_p, KERNEL_SIZE, KERNEL_SIGMA = 1.5)
+function denoising_model(shape, shape_p, KERNEL_SIZE, KERNEL_TYPE, KERNEL_SIGMA = 1.5)
   sigma = 10^-3
   data_path = joinpath(@__DIR__, "..", "images/cameraman.png")
   cameraman_image = Images.load(data_path)

@@ -172,7 +172,7 @@ include("rmodel_tests.jl")
   n_p, m_p = 260, 260
   kz = 9
   kt = "gaussian"
-  model, sol = denoing_model((n, m), (n_p, m_p), kz, kt)
+  model, sol = denoising_model((n, m), (n_p, m_p), kz, kt)
   @test typeof(model) <: FirstOrderModel
   @test typeof(sol) == typeof(model.meta.x0)
   @test model.meta.nvar == n * m
