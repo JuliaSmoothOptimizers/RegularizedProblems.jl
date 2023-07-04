@@ -4,7 +4,8 @@ include("denoising_data.jl")
 
 function denoising_model(shape, shape_p, KERNEL_SIZE, KERNEL_TYPE, KERNEL_SIGMA = 1.5)
   sigma = 10^-3
-  cameraman_image = load("images/cameraman.png")
+  data_path = joinpath(@__DIR__, "..", "images/cameraman.png")
+  cameraman_image = load(data_path)
   x_t = vec(Float64.(cameraman_image))
   H, H_T, W, W_T = generate_HW(shape, shape_p, KERNEL_SIZE, KERNEL_TYPE, KERNEL_SIGMA)
   (n, m) = shape
