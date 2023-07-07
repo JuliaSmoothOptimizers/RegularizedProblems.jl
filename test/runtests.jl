@@ -18,6 +18,9 @@ function test_objectives(model, nls_model, x = model.meta.x0)
   g = grad(model, x)
   JtF = jtprod_residual(nls_model, x, F)
   @test all(g .≈ JtF)
+
+  JF = jprod_residual(nls_model, x, x)
+  @test JF' * F ≈ JtF' * x
 end
 
 @testset "BPDN" begin
@@ -137,12 +140,14 @@ end
 end
 
 @testset "NNMF" begin
-  # TODO: complete tests after NLS model has been implemented
   m, n, k = 100, 50, 10
-  model, sol, selected = nnmf_model(m, n, k)
+  model, nls_model, sol, selected = nnmf_model(m, n, k)
   @test selected == (m * k + 1):((m + n) * k)
-  @test typeof(model) <: FirstOrderModel
-  @test typeof(sol) == typeof(model.meta.x0)
+  test_well_defined(model, nls_model, sol)
+  @test nls_model.nls_meta.nequ == m * n
   @test all(model.meta.lvar .== 0)
   @test all(model.meta.uvar .== Inf)
+  @test all(nls_model.meta.lvar .== 0)
+  @test all(nls_model.meta.uvar .== Inf)
+  test_objectives(model, nls_model)
 end
