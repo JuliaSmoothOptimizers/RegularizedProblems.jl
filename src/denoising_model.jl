@@ -5,7 +5,7 @@ export denoising_model
 
 include("denoising_data.jl")
 
-function denoising_model(shape, shape_p, KERNEL_SIZE, KERNEL_TYPE, KERNEL_SIGMA = 1.5)
+function denoising_model(shape, shape_p, KERNEL_SIZE, KERNEL_SIGMA = 1.5)
   sigma = 10^-3
   data_path = joinpath(@__DIR__, "..", "images/cameraman.png")
   cameraman_image = Images.load(data_path)
@@ -25,7 +25,11 @@ function denoising_model(shape, shape_p, KERNEL_SIZE, KERNEL_TYPE, KERNEL_SIGMA 
 
   function grad!(g, x)
     y .= H(W_T(x))
+<<<<<<< HEAD
     z .= 1 ./ ((y .- b) .^ 2 .+ 1)
+=======
+    z .= 1.0 ./ ((y .- b) .^ 2 .+ 1)
+>>>>>>> 11df75c (Update project.toml and reduce allocations)
     @. z = 2 * z * (y - b)
     g .= W(H_T(z))
     return g
