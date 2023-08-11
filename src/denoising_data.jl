@@ -3,7 +3,6 @@ export generate_uniform_blur, generate_gaussian_blur
 """
 Implementation of the denoising problem described in 
 
-<<<<<<< HEAD
 Stella, L., Themelis, A. & Patrinos, P. 
 Forward–backward quasi-Newton methods for nonsmooth optimization problems. 
 Comput Optim Appl 67, 443–487 (2017). https://doi.org/10.1007/s10589-017-9912-y
@@ -14,16 +13,6 @@ Chouzenoux, E., Martin, S. & Pesquet, JC.
 A Local MM Subspace Method for Solving Constrained Variational Problems in Image Recovery. 
 J Math Imaging Vis 65, 253–276 (2023). https://doi.org/10.1007/s10851-022-01112-z
 """
-# non-allocating reshape
-# see https://github.com/JuliaLang/julia/issues/36313
-reshape_array(a, dims) = invoke(Base._reshape, Tuple{AbstractArray, typeof(dims)}, a, dims)
-=======
-Chouzenoux, E., Martin, S. & Pesquet, JC. 
-A Local MM Subspace Method for Solving Constrained Variational Problems in Image Recovery. 
-J Math Imaging Vis 65, 253–276 (2023). https://doi.org/10.1007/s10851-022-01112-z
-
-"""
->>>>>>> 11df75c (Update project.toml and reduce allocations)
 
 # Function to unpad an array
 function unpad(x, n_p, m_p, n)
@@ -61,20 +50,9 @@ end
 # Function to generate a Gaussian kernel
 function my_gaussian_kernel(kernel_size, kernel_sigma)
   x, y = meshgrid((-kernel_size):kernel_size, (-kernel_size):kernel_size)
-<<<<<<< HEAD
-  normal = 1 / (2 * pi * kernel_sigma^2)
-  kernel = exp(-((x ^ 2 + y ^ 2) / (2 * kernel_sigma^2))) * normal
-  kernel ./= sum(kernel)
-=======
   normal = 1 / (2.0 * pi * kernel_sigma^2)
-<<<<<<< HEAD
-  kernel = exp.(-((x .^ 2 + y .^ 2) / (2.0 * kernel_sigma^2))) * normal
-  kernel .= kernel / sum(kernel)
->>>>>>> 11df75c (Update project.toml and reduce allocations)
-=======
   kernel = exp.(-((x .^ 2 .+ y .^ 2) / (2.0 * kernel_sigma^2))) * normal
   kernel ./= sum(kernel)
->>>>>>> a8c1f29 (denoising data remove extra allocation)
   return kernel
 end
 
