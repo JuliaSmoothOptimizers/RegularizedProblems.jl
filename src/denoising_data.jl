@@ -67,9 +67,14 @@ function my_gaussian_kernel(kernel_size, kernel_sigma)
   kernel ./= sum(kernel)
 =======
   normal = 1 / (2.0 * pi * kernel_sigma^2)
+<<<<<<< HEAD
   kernel = exp.(-((x .^ 2 + y .^ 2) / (2.0 * kernel_sigma^2))) * normal
   kernel .= kernel / sum(kernel)
 >>>>>>> 11df75c (Update project.toml and reduce allocations)
+=======
+  kernel = exp.(-((x .^ 2 .+ y .^ 2) / (2.0 * kernel_sigma^2))) * normal
+  kernel ./= sum(kernel)
+>>>>>>> a8c1f29 (denoising data remove extra allocation)
   return kernel
 end
 
