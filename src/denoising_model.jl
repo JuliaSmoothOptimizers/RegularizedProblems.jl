@@ -16,7 +16,7 @@ function denoising_model(shape, shape_p, KERNEL_SIZE, KERNEL_SIGMA = 1.5)
   function obj(x)
     y .= W_T(x)
     y .= H(y)
-    z .= log.((y - b) .^ 2 .+ 1)
+    z .= log.((y .- b) .^ 2 .+ 1)
     return sum(z)
   end
 
