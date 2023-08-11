@@ -176,4 +176,7 @@ include("rmodel_tests.jl")
   @test typeof(model) <: FirstOrderModel
   @test typeof(sol) == typeof(model.meta.x0)
   @test model.meta.nvar == n * m
+  x = model.meta.x0
+  @test typeof(obj(model, x)) <: Float64
+  @test typeof(grad(model, x)) <: Vector{Float64}
 end
