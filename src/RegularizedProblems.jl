@@ -1,6 +1,6 @@
 module RegularizedProblems
 
-using LinearAlgebra
+using LinearAlgebra, SparseArrays
 using Random, Requires
 using NLPModels
 using Distributions, Noise
@@ -21,6 +21,9 @@ function __init__()
   end
   @require MLDatasets = "eb30cadb-4394-5ae3-aed4-317e484a6458" begin
     include("nonlin_svm_model.jl")
+  end
+  @require QuadraticModels = "f468eda6-eac5-11e8-05a5-ff9e497bcd19" begin
+    include("qp_rand_model.jl")
   end
 end
 
