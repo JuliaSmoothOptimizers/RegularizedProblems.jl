@@ -1,5 +1,5 @@
 using LinearAlgebra, Test
-using ADNLPModels, DifferentialEquations, NLPModels, MLDatasets
+using ADNLPModels, DifferentialEquations, NLPModels, MLDatasets, QuadraticModels
 using RegularizedProblems
 
 function test_well_defined(model, nls_model, sol)
@@ -150,4 +150,12 @@ end
   @test all(nls_model.meta.lvar .== 0)
   @test all(nls_model.meta.uvar .== Inf)
   test_objectives(model, nls_model)
+end
+
+@testset "QP-rand" begin
+  n, dens = 100, 0.1
+  model, x0 = qp_rand_model(n, dens)
+  @test all(model.meta.lvar .== -1.0)
+  @test all(model.meta.uvar .== Inf)
+  @test all(model.meta.x0 .== x0)
 end
