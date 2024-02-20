@@ -6,7 +6,6 @@ Implementation of the denoising problem described in
 Chouzenoux, E., Martin, S. & Pesquet, JC. 
 A Local MM Subspace Method for Solving Constrained Variational Problems in Image Recovery. 
 J Math Imaging Vis 65, 253–276 (2023). https://doi.org/10.1007/s10851-022-01112-z
-
 """
 
 # Function to unpad an array
