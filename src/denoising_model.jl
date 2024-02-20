@@ -25,11 +25,7 @@ function denoising_model(shape, shape_p, KERNEL_SIZE, KERNEL_SIGMA = 1.5)
 
   function grad!(g, x)
     y .= H(W_T(x))
-<<<<<<< HEAD
     z .= 1 ./ ((y .- b) .^ 2 .+ 1)
-=======
-    z .= 1.0 ./ ((y .- b) .^ 2 .+ 1)
->>>>>>> 11df75c (Update project.toml and reduce allocations)
     @. z = 2 * z * (y - b)
     g .= W(H_T(z))
     return g
