@@ -7,7 +7,7 @@ function mat_rand(m::Int, n::Int, r::Int, sr::Float64, va::Float64, vb::Float64,
   Ω = findall(<(sr), rand(m, n))
   B = xs[Ω]
   B = (1 - c) * add_gauss(B, va, 0; clip = true) + c * add_gauss(B, vb, 0; clip = true)
-  ω = zeros(Int64, size(Ω, 1))   # Vectorize Omega 
+  ω = zeros(Int64, size(Ω, 1))   # Vectorize Omega
   for i = 1:size(Ω, 1)
     ω[i] = Ω[i][1] + size(Ω, 2) * (Ω[i][2] - 1)
   end
@@ -44,7 +44,7 @@ function matrix_completion_model(xs, B, ω)
 end
 
 """
-    model, nls_model, sol = random_matrix_completion_model(args...)
+    model, nls_model, sol = random_matrix_completion_model(; kwargs...)
 
 Return an instance of an `NLPModel` and an instance of an `NLSModel` representing
 the same matrix completion problem, i.e., the square linear least-squares objective
@@ -55,38 +55,38 @@ in the Frobenius norm, where X is the unknown image represented as an m x n matr
 A is a fixed image, and the operator P only retains a certain subset of pixels of
 X and A.
 
-## Arguments
+## Keyword Arguments
 
-* `m :: Int`: the number of rows of X and A
-* `n :: Int`: the number of columns of X and A
-* `r :: Int`: the desired rank of A
+* `m :: Int`: the number of rows of X and A (default: 100)
+* `n :: Int`: the number of columns of X and A (default: 100)
+* `r :: Int`: the desired rank of A (default: 5)
 * `sr :: AbstractFloat`: a threshold between 0 and 1 used to determine the set of pixels
-  retained by the operator P
-* `va :: AbstractFloat`: the variance of a first Gaussian perturbation to be applied to A
-* `vb :: AbstractFloat`: the variance of a second Gaussian perturbation to be applied to A
-* `c :: AbstractFloat`: the coefficient of the convex combination of the two Gaussian perturbations.
+retained by the operator P (default: 0.8)
+* `va :: AbstractFloat`: the variance of a first Gaussian perturbation to be applied to A (default: 1.0e-4)
+* `vb :: AbstractFloat`: the variance of a second Gaussian perturbation to be applied to A (default: 1.0e-2)
+* `c :: AbstractFloat`: the coefficient of the convex combination of the two Gaussian perturbations (default: 0.2).
 
 ## Return Value
 
 An instance of a `FirstOrderModel` and of a `FirstOrderNLSModel` that represent the same
 matrix completion problem, and the exact solution.
 """
-function random_matrix_completion_model(
-  m::Int,
-  n::Int,
-  r::Int,
-  sr::R,
-  va::R,
-  vb::R,
-  c::R,
-) where {R <: AbstractFloat}
+function random_matrix_completion_model(;
+  m::Int = 100,
+  n::Int = 100,
+  r::Int = 5,
+  sr::Float64 = 0.8,
+  va::Float64 = 1.0e-4,
+  vb::Float64 = 1.0e-2,
+  c::Float64 = 0.2,
+)
   xs, B, ω = mat_rand(m, n, r, sr, va, vb, c)
   matrix_completion_model(xs, B, ω)
 end
 
 function perturb(I, c = 0.8, p = 0.8)
   Ω = findall(<(p), rand(256, 256))
-  ω = zeros(Int, size(Ω, 1))   # Vectorize Omega 
+  ω = zeros(Int, size(Ω, 1))   # Vectorize Omega
   for i = 1:size(Ω, 1)
     ω[i] = Ω[i][1] + 256 * (Ω[i][2] - 1)
   end
@@ -98,7 +98,7 @@ function perturb(I, c = 0.8, p = 0.8)
 end
 
 """
-    model, nls_model, sol = MIT_matrix_completion_model(args...)
+    model, nls_model, sol = MIT_matrix_completion_model()
 
 A special case of matrix completion problem in which the exact image is a noisy
 MIT logo.
