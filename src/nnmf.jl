@@ -23,7 +23,6 @@ function nnmf_data(m::Int, n::Int, k::Int, T::DataType = Float64)
   return A
 end
 
-
 """
     model, Av, selected = nnmf_model(m = 100, n = 50, k = 10, T = Float64)
 
