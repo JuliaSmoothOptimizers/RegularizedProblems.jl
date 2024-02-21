@@ -5,7 +5,7 @@ function lrcomp_data(m::Int, n::Int; T::DataType = Float64)
   A
 end
 
-function lrcomp_model(m::Int, n::Int; T::DataType = Float64)
+function lrcomp_model(; m::Int = 100, n::Int = 100, T::DataType = Float64)
   A = lrcomp_data(m, n, T = T)
   r = vec(similar(A))
 

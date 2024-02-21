@@ -1,10 +1,22 @@
 export group_lasso_model
 
-function group_lasso_data(m::Int, n::Int, g::Int, ag::Int, noise::Float64 = 0.01)
-  (m ≤ n) || error("number of rows ($m) should be ≤ number of columns ($n)")
-  (mod(n, g) == 0) || error("number of groups ($g) must divide evenly into number of rows ($n)")
-  (ag ≤ g) || error("number of active groups ($ag) must be smaller than the number of groups ($g)")
+function group_lasso_data(;
+  m::Int = 200,
+  n::Int = 512,
+  g::Int = 16,
+  ag::Int = 5,
+  noise::Float64 = 0.01,
+  compound::Int = 1,
+)
+  m ≤ n || error("number of rows ($m) should be ≤ number of columns ($n)")
+  mod(n, g) == 0 || error("number of groups ($g) must divide evenly into number of rows ($n)")
+  ag ≤ g || error("number of active groups ($ag) must be smaller than the number of groups ($g)")
+  compound > 0 || error("compound factor must be positive")
 
+  m = compound * m
+  n = compound * n
+  g = compound * g
+  ag = compound * ag
   x0 = zeros(n)
   active_groups = sort(randperm(g)[1:ag]) # pick out active groups
   group_eles = Int(n / g) # get number of elements in a group
@@ -25,12 +37,8 @@ function group_lasso_data(m::Int, n::Int, g::Int, ag::Int, noise::Float64 = 0.01
   A, b, b0, x0, g, active_groups, indset
 end
 
-group_lasso_data(compound::Int = 1, args...) =
-  group_lasso_data(200 * compound, 512 * compound, 16 * compound, 5 * compound, args...)
-
 """
-    model, nls_model, sol = group_lasso_model(args...)
-    model, nls_model, sol = group_lasso_model(compound = 1, args...)
+    model, nls_model, sol = group_lasso_model(; kwargs...)
 
 Return an instance of an `NLPModel` and `NLSModel` representing the group-lasso
 problem, i.e., the under-determined linear least-squares objective
@@ -42,28 +50,23 @@ vector following a normal distribution with mean zero and standard deviation σ.
 Note that with this format, all groups have a the same number of elements and the number of
 groups divides evenly into the total number of elements.
 
-## Arguments
+## Keyword Arguments
 
-* `m :: Int`: the number of rows of A
-* `n :: Int`: the number of columns of A (with `n` ≥ `m`)
-* `g :: Int : the number of groups`
-* `ag :: Array{Int}`:  group-index denoting which groups are active (with `max(ag) ≤ g`), i.e. `[1, 4, 5]` when there are 7 groups
-* `noise :: Float64`: noise amount ϵ (default: 0.01).
-
-The second form calls the first form with arguments
-
-    m = 200 * compound
-    n = 512 * compound
-    k =  10 * compound
+* `m :: Int`: the number of rows of A (default: 200)
+* `n :: Int`: the number of columns of A, with `n` ≥ `m` (default: 512)
+* `g :: Int`: the number of groups (default: 16)
+* `ag :: Int`: the number of active groups (default: 5)
+* `noise :: Float64`: noise amount (default: 0.01)
+* `compound :: Int`: multiplier for `m`, `n`, `g`, and `ag` (default: 1).
 
 ## Return Value
 
 An instance of a `FirstOrderModel` that represents the group-lasso problem.
 An instance of a `FirstOrderNLSModel` that represents the group-lasso problem.
-Also returns true x, number of groups g, group-index denoting which groups are active, and a Matrix where rows are group indices of x
+Also returns true x, number of groups g, group-index denoting which groups are active, and a Matrix where rows are group indices of x.
 """
-function group_lasso_model(args...)
-  A, b, b0, x0, g, active_groups, indset = group_lasso_data(args...)
+function group_lasso_model(args...; kwargs...)
+  A, b, b0, x0, g, active_groups, indset = group_lasso_data(args...; kwargs...)
   r = similar(b)
 
   function resid!(r, x)

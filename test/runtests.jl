@@ -74,7 +74,7 @@ end
 end
 
 @testset "low-rank completion" begin
-  model, nls_model, A = lrcomp_model(100, 100)
+  model, nls_model, A = lrcomp_model()
   test_well_defined(model, nls_model, A)
   test_objectives(model, nls_model)
   @test model.meta.nvar == 10000
@@ -84,7 +84,7 @@ end
 end
 
 @testset "mat_rand" begin
-  model, nls_model, sol = random_matrix_completion_model(100, 100, 5, 0.8, 0.0001, 0.01, 0.2)
+  model, nls_model, sol = random_matrix_completion_model()
   test_well_defined(model, nls_model, sol)
   test_objectives(model, nls_model)
   @test model.meta.nvar == 10000
@@ -164,3 +164,5 @@ end
   @test all(0.0 .≤ model.meta.uvar .≤ 2.0)
   @test all(model.meta.x0 .== 0)
 end
+
+include("rmodel_tests.jl")
