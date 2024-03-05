@@ -3,6 +3,12 @@ export generate_uniform_blur, generate_gaussian_blur
 """
 Implementation of the denoising problem described in 
 
+Stella, L., Themelis, A. & Patrinos, P. 
+Forward–backward quasi-Newton methods for nonsmooth optimization problems. 
+Comput Optim Appl 67, 443–487 (2017). https://doi.org/10.1007/s10589-017-9912-y
+
+and adapted from the original implementation in Python by the authors of the paper:
+
 Chouzenoux, E., Martin, S. & Pesquet, JC. 
 A Local MM Subspace Method for Solving Constrained Variational Problems in Image Recovery. 
 J Math Imaging Vis 65, 253–276 (2023). https://doi.org/10.1007/s10851-022-01112-z
