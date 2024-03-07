@@ -22,6 +22,13 @@ function __init__()
   @require MLDatasets = "eb30cadb-4394-5ae3-aed4-317e484a6458" begin
     include("nonlin_svm_model.jl")
   end
+  @require FFTW = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341" begin
+    @require Wavelets = "29a6e085-ba6d-5f35-a997-948ac2efa89a" begin
+      @require Images = "916415d5-f1e6-5110-898d-aaa5f9f070e0" begin
+        include("denoising_model.jl")
+      end
+    end
+  end
 end
 
 end
