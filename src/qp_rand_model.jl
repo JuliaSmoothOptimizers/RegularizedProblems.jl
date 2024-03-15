@@ -2,7 +2,7 @@ export qp_rand_model
 using .QuadraticModels
 
 """
-    model, x0 = qp_rand_model(n; dens = 1.0e-3, convex = false)
+    model, x0 = qp_rand_model(n; dens = 1.0e-4, convex = false)
 
 Return an instance of a `QuadraticModel` representing
 
@@ -16,7 +16,7 @@ with H = A + A' or H = A * A' + I (see the `convex` keyword argument) where A is
 
 ## Keyword arguments
 
-* `dens :: Real`: density of `A`` used to generate the quadratic model (default: `1.0e-3`).
+* `dens :: Real`: density of `A`` used to generate the quadratic model (default: `1.0e-4`).
 * `convex :: Bool`: true to generate a convex `H` (default: `false`).
 
 ## Return Value
