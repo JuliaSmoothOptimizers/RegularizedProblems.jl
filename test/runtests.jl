@@ -154,8 +154,13 @@ end
 
 @testset "QP-rand" begin
   n, dens = 100, 0.1
-  model, x0 = qp_rand_model(n, dens)
-  @test all(model.meta.lvar .== -1.0)
-  @test all(model.meta.uvar .== Inf)
+  model, x0 = qp_rand_model(n; dens = dens, convex = false)
+  @test all(-2.0 .≤  model.meta.lvar .≤ 0.0)
+  @test all(0.0 .≤  model.meta.uvar .≤ 2.0)
+  @test all(model.meta.x0 .== x0)
+
+  model, x0 = qp_rand_model(n; dens = dens, convex = true)
+  @test all(-2.0 .≤  model.meta.lvar .≤ 0.0)
+  @test all(0.0 .≤  model.meta.uvar .≤ 2.0)
   @test all(model.meta.x0 .== x0)
 end
