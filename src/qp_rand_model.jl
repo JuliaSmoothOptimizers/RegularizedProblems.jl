@@ -2,7 +2,7 @@ export qp_rand_model
 using .QuadraticModels
 
 """
-    model, x0 = qp_rand_model(n; dens = 1.0e-4, convex = false)
+    model = qp_rand_model(n; dens = 1.0e-4, convex = false)
 
 Return an instance of a `QuadraticModel` representing
 
@@ -16,7 +16,7 @@ with H = A + A' or H = A * A' (see the `convex` keyword argument) where A is a r
 
 ## Keyword arguments
 
-* `dens :: Real`: density of `A`` used to generate the quadratic model (default: `1.0e-4`).
+* `dens :: Real`: density of `A` with `0 < dens ≤ 1` used to generate the quadratic model (default: `1.0e-4`).
 * `convex :: Bool`: true to generate positive definite `H` (default: `false`).
 
 ## Return Value
@@ -24,12 +24,11 @@ with H = A + A' or H = A * A' (see the `convex` keyword argument) where A is a r
 An instance of a `QuadraticModel`.
 """
 function qp_rand_model(n::Int; dens::R = 1.0e-4, convex::Bool = false) where {R <: Real}
+  @assert 0 < dens ≤ 1
   A = sprandn(R, n, n, dens)
   H = convex ? (A * A') : (A + A')
   c = randn(R, n)
   l = -one(R) .- rand(R, n)
   u = one(R) .+ rand(R, n)
-  qp = QuadraticModel(c, H; lvar = l, uvar = u)
-  x0 = zeros(R, n)
-  qp, x0
+  QuadraticModel(c, H; lvar = l, uvar = u, x0 = zeros(R, n))
 end
