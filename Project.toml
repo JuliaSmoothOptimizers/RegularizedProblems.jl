@@ -27,7 +27,8 @@ DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
 MLDatasets = "eb30cadb-4394-5ae3-aed4-317e484a6458"
 ProximalOperators = "a725b495-10eb-56fe-b38b-717eba820537"
 QuadraticModels = "f468eda6-eac5-11e8-05a5-ff9e497bcd19"
+ShiftedProximalOperators = "d4fd37fa-580c-4e43-9b30-361c21aae263"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["ADNLPModels", "DifferentialEquations", "MLDatasets", "ProximalOperators", "QuadraticModels", "Test"]
+test = ["ADNLPModels", "DifferentialEquations", "MLDatasets", "ProximalOperators", "QuadraticModels", "ShiftedProximalOperators", "Test"]
