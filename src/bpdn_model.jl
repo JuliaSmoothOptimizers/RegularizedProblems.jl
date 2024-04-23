@@ -21,8 +21,8 @@ bpdn_data(compound::Int = 1, args...; bounds::Bool = false) =
   bpdn_data(200 * compound, 512 * compound, 10 * compound, args...; bounds = bounds)
 
 """
-    model, nls_model, sol = bpdn_model(args...)
-    model, nls_model, sol = bpdn_model(compound = 1, args...)
+    model, nls_model, sol = bpdn_model(args...; kwargs...)
+    model, nls_model, sol = bpdn_model(compound = 1, args...; kwargs...)
 
 Return an instance of an `NLPModel` and an instance of an `NLSModel` representing
 the same basis-pursuit denoise problem, i.e., the under-determined linear

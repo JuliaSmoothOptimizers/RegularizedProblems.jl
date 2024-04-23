@@ -16,3 +16,10 @@ using ProximalOperators
   obj(nls_model, nls_model.meta.x0)
   @test neval_obj(rlsmodel) == neval_obj(nls_model)
 end
+
+@testset "Problem combos" begin
+  # Test that we can at least instantiate the models
+  rnlp, rnls = setup_bpdn_l0()
+  @test isa(rnlp, RegularizedNLPModel)
+  @test isa(rnls, RegularizedNLSModel)
+end
