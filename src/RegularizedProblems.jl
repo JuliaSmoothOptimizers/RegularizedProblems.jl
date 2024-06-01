@@ -4,6 +4,9 @@ using LinearAlgebra, SparseArrays
 using Random, Requires
 using NLPModels
 using Distributions, Noise
+using FFTW
+using Images
+using Wavelets
 
 include("utils.jl")
 include("types.jl")
@@ -12,6 +15,7 @@ include("lrcomp_model.jl")
 include("matrand_model.jl")
 include("group_lasso_model.jl")
 include("nnmf.jl")
+include("denoising_model.jl")
 
 function __init__()
   @require ProximalOperators = "a725b495-10eb-56fe-b38b-717eba820537" begin

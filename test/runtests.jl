@@ -1,5 +1,6 @@
 using LinearAlgebra, Test
 using ADNLPModels, DifferentialEquations, NLPModels, MLDatasets, QuadraticModels
+using Images, FFTW, Wavelets
 using RegularizedProblems
 
 function test_well_defined(model, nls_model, sol)
@@ -166,3 +167,13 @@ end
 end
 
 include("rmodel_tests.jl")
+@testset "denoing_model" begin
+  n, m = 256, 256
+  n_p, m_p = 260, 260
+  kz = 9
+  kt = "gaussian"
+  model, sol = denoing_model((n, m), (n_p, m_p), kz, kt)
+  @test typeof(model) <: FirstOrderModel
+  @test typeof(sol) == typeof(model.meta.x0)
+  @test model.meta.nvar == n * m
+end
