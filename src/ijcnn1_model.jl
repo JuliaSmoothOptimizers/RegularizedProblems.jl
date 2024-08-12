@@ -98,7 +98,7 @@ Model constructor of IJCNN1 training problem.
 
 ### Return values
 
-* nlp::FirstOrderNLPModel : an instance of IJCNN1 train with NLP structure
+* nlp::FirstOrderModel : an instance of IJCNN1 train with NLP structure
 * nls::FirstOrderNLSModel : an instance of IJCNN1 train with NLS structure
 * sol::Vector{Float64} : IJCNN1 train solution i.e. its given labels
 """
@@ -115,7 +115,7 @@ Model constructor of IJCNN1 testing problem.
 
 ### Return values
 
-* nlp::FirstOrderNLPModel : an instance of IJCNN1 test with NLP structure
+* nlp::FirstOrderModel : an instance of IJCNN1 test with NLP structure
 * nls::FirstOrderNLSModel : an instance of IJCNN1 test with NLS structure
 * sol::Vector{Float64} : IJCNN1 test solution i.e. its given labels
 """
