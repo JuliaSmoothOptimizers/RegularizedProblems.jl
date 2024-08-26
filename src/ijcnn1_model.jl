@@ -1,7 +1,4 @@
-export ijcnn1_generate_data_tr, ijcnn1_generate_data_test, ijcnn1_model_sto
-
-#packages required for getting and decompressing IJCNN1 from LIBSVM
-using HTTP, CodecBzip2
+export ijcnn1_generate_data_tr, ijcnn1_generate_data_test, ijcnn1_train_model, ijcnn1_test_model
 
 """
     ijcnn1_generate_data_tr(; n::Int = 49990, d::Int = 22)

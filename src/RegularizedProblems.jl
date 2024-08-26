@@ -4,6 +4,8 @@ using LinearAlgebra
 using Random, Requires
 using NLPModels
 using Distributions, Noise
+#packages required for getting and decompressing IJCNN1 from LIBSVM
+using HTTP, CodecBzip2
 
 include("utils.jl")
 include("types.jl")
@@ -12,6 +14,7 @@ include("lrcomp_model.jl")
 include("matrand_model.jl")
 include("group_lasso_model.jl")
 include("nnmf.jl")
+include("ijcnn1_model.jl")
 
 function __init__()
   @require ADNLPModels = "54578032-b7ea-4c30-94aa-7cbd1cce6c9a" begin
