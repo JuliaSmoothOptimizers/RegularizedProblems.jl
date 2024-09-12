@@ -4,10 +4,16 @@ authors = ["Dominique Orban <dominique.orban@gmail.com>, Robert Baraldi <robertj
 version = "0.1.1"
 
 [deps]
+ADNLPModels = "54578032-b7ea-4c30-94aa-7cbd1cce6c9a"
+DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+FFTW = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
+Images = "916415d5-f1e6-5110-898d-aaa5f9f070e0"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+MLDatasets = "eb30cadb-4394-5ae3-aed4-317e484a6458"
 NLPModels = "a4795742-8479-5a88-8948-cc11e1c8c1a6"
 Noise = "81d43f40-5267-43b7-ae1c-8b967f377efa"
+QuadraticModels = "f468eda6-eac5-11e8-05a5-ff9e497bcd19"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Requires = "ae029012-a4dd-5104-9daa-d747884805df"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
@@ -25,14 +31,14 @@ julia = "^1.6.0"
 [extras]
 ADNLPModels = "54578032-b7ea-4c30-94aa-7cbd1cce6c9a"
 DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
+FFTW = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
+Images = "916415d5-f1e6-5110-898d-aaa5f9f070e0"
 MLDatasets = "eb30cadb-4394-5ae3-aed4-317e484a6458"
 ProximalOperators = "a725b495-10eb-56fe-b38b-717eba820537"
 QuadraticModels = "f468eda6-eac5-11e8-05a5-ff9e497bcd19"
 ShiftedProximalOperators = "d4fd37fa-580c-4e43-9b30-361c21aae263"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-FFTW = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
-Images = "916415d5-f1e6-5110-898d-aaa5f9f070e0"
 Wavelets = "29a6e085-ba6d-5f35-a997-948ac2efa89a"
 
 [targets]
-test = ["ADNLPModels", "DifferentialEquations", "MLDatasets", "ProximalOperators", "QuadraticModels", "ShiftedProximalOperators", "Test"]
+test = ["ADNLPModels", "DifferentialEquations", "MLDatasets", "ProximalOperators", "QuadraticModels", "ShiftedProximalOperators", "Test", "Images", "FFTW", "Wavelets"]
