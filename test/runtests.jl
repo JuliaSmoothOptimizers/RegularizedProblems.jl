@@ -167,7 +167,6 @@ end
 end
 
 include("rmodel_tests.jl")
-@testset "denoing_model" begin
 @testset "denoising_model" begin
   n, m = 256, 256
   n_p, m_p = 260, 260
