@@ -1,6 +1,3 @@
-using Images
-using FFTW
-using Wavelets
 export denoising_model
 
 include("denoising_data.jl")
