@@ -18,7 +18,7 @@ J Math Imaging Vis 65, 253–276 (2023). https://doi.org/10.1007/s10851-022-0111
 function unpad(x, n_p, m_p, n)
   a = n_p - n + 1
   x = reshape_array(x, (n_p, m_p))
-  unpadded_x = x[(a + 1):end, (a + 1):end]
+  unpadded_x = x[a:end, a:end]
   return unpadded_x
 end
 
