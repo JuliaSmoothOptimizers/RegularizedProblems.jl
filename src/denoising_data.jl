@@ -50,7 +50,7 @@ end
 # Function to generate a Gaussian kernel
 function my_gaussian_kernel(kernel_size, kernel_sigma)
   x, y = meshgrid((-kernel_size):kernel_size, (-kernel_size):kernel_size)
-  normal = 1 / (2.0 * pi * kernel_sigma^2)
+  normal = 1 / (2 * pi * kernel_sigma^2)
   kernel = exp.(-((x .^ 2 .+ y .^ 2) / (2.0 * kernel_sigma^2))) * normal
   kernel ./= sum(kernel)
   return kernel
