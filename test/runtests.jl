@@ -166,7 +166,6 @@ end
   @test all(model.meta.x0 .== 0)
 end
 
-include("rmodel_tests.jl")
 @testset "denoising_model" begin
   n, m = 256, 256
   n_p, m_p = 260, 260
@@ -179,3 +178,5 @@ include("rmodel_tests.jl")
   @test typeof(obj(model, x)) <: Float64
   @test typeof(grad(model, x)) <: Vector{Float64}
 end
+
+include("rmodel_tests.jl")
