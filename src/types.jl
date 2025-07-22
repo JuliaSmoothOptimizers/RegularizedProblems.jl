@@ -1,54 +1,8 @@
-export FirstOrderModel,
-  FirstOrderNLSModel, AbstractRegularizedNLPModel, RegularizedNLPModel, RegularizedNLSModel
+export FirstOrderNLSModel, AbstractRegularizedNLPModel, RegularizedNLPModel, RegularizedNLSModel
 
-"""
-    model = FirstOrderModel(f, ∇f!; name = "first-order model")
-
-A simple subtype of `AbstractNLPModel` to represent a smooth objective.
-
-## Arguments
-
-* `f :: F <: Function`: a function such that `f(x)` returns the objective value at `x`;
-* `∇f! :: G <: Function`: a function such that `∇f!(g, x)` stores the gradient of the
-  objective at `x` in `g`;
-* `x :: AbstractVector`: an initial guess.
-
-All keyword arguments are passed through to the `NLPModelMeta` constructor.
-"""
-mutable struct FirstOrderModel{T, S, F, G} <: AbstractNLPModel{T, S}
-  meta::NLPModelMeta{T, S}
-  counters::Counters
-
-  f::F
-  ∇f!::G
-
-  function FirstOrderModel{T, S, F, G}(
-    f::F,
-    ∇f!::G,
-    x::S;
-    kwargs...,
-  ) where {T, S, F <: Function, G <: Function}
-    nvar = length(x)
-    meta = NLPModelMeta(nvar, x0 = x; kwargs...)
-    return new{T, S, F, G}(meta, Counters(), f, ∇f!)
-  end
-end
-
-FirstOrderModel(f, ∇f!, x::S; kwargs...) where {S} =
-  FirstOrderModel{eltype(S), S, typeof(f), typeof(∇f!)}(f, ∇f!, x; kwargs...)
-
-function NLPModels.obj(nlp::FirstOrderModel, x::AbstractVector)
-  NLPModels.@lencheck nlp.meta.nvar x
-  increment!(nlp, :neval_obj)
-  return nlp.f(x)
-end
-
-function NLPModels.grad!(nlp::FirstOrderModel, x::AbstractVector, g::AbstractVector)
-  NLPModels.@lencheck nlp.meta.nvar x
-  increment!(nlp, :neval_grad)
-  nlp.∇f!(g, x)
-  return g
-end
+#! format: off
+@deprecate FirstOrderModel(f, ∇f!, x; kwargs...) NLPModel(x, f; grad = ∇f!, meta_args = Dict(kwargs...))
+#! format: on
 
 """
     model = FirstOrderNLSModel(r!, jv!, jtv!; name = "first-order NLS model")

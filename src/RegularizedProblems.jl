@@ -2,7 +2,7 @@ module RegularizedProblems
 
 using LinearAlgebra, SparseArrays
 using Random, Requires
-using NLPModels
+using ManualNLPModels, NLPModels
 using Distributions, Noise
 
 include("utils.jl")
