@@ -1,11 +1,14 @@
 name = "RegularizedProblems"
 uuid = "ea076b23-609f-44d2-bb12-a4ae45328278"
-authors = ["Dominique Orban <dominique.orban@gmail.com>, Robert Baraldi <robertjbaraldi@gmail.com"]
+authors = [
+  "Dominique Orban <dominique.orban@gmail.com>, Robert Baraldi <robertjbaraldi@gmail.com",
+]
 version = "0.1.1"
 
 [deps]
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+ManualNLPModels = "30dfa513-9b2f-4fb3-9796-781eabac1617"
 NLPModels = "a4795742-8479-5a88-8948-cc11e1c8c1a6"
 Noise = "81d43f40-5267-43b7-ae1c-8b967f377efa"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
@@ -15,6 +18,7 @@ SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 [compat]
 ADNLPModels = "^0.3, 0.4, 0.7"
 Distributions = "0.25"
+ManualNLPModels = "0.1"
 MLDatasets = "^0.7.4"
 NLPModels = "0.16, 0.17, 0.18, 0.19, 0.20, 0.21"
 Noise = "0.2"
@@ -31,4 +35,12 @@ ShiftedProximalOperators = "d4fd37fa-580c-4e43-9b30-361c21aae263"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["ADNLPModels", "DifferentialEquations", "MLDatasets", "ProximalOperators", "QuadraticModels", "ShiftedProximalOperators", "Test"]
+test = [
+  "ADNLPModels",
+  "DifferentialEquations",
+  "MLDatasets",
+  "ProximalOperators",
+  "QuadraticModels",
+  "ShiftedProximalOperators",
+  "Test",
+]

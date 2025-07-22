@@ -68,7 +68,7 @@ retained by the operator P (default: 0.8)
 
 ## Return Value
 
-An instance of a `FirstOrderModel` and of a `FirstOrderNLSModel` that represent the same
+An instance of an `NLPModel` and of a `FirstOrderNLSModel` that represent the same
 matrix completion problem, and the exact solution.
 """
 function random_matrix_completion_model(;

@@ -55,7 +55,7 @@ With the MNIST Dataset, the dimensions are:
 
 ## Return Value
 
-An instance of a `FirstOrderModel` that represents the complete SVM problem in NLP form, and
+An instance of an `NLPModel` that represents the complete SVM problem in NLP form, and
 an instance of `FirstOrderNLSModel` that represents the nonlinear least squares in nonlinear least squares form.
 """
 function svm_model(A, b)
