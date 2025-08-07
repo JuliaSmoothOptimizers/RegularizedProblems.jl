@@ -1,6 +1,6 @@
 export fh_model, fh_nls_model
 
-function FH_smooth_term()
+function FH_smooth_term(; abstol = 1e-14, reltol = 1e-14)
   # FH model = van-der-Pol oscillator when I = b = c = 0
   # x' = μ(x - x^3/3 - y)
   # y' = x/μ -> here μ = 12.5
@@ -34,8 +34,8 @@ function FH_smooth_term()
     sol = DifferentialEquations.solve(
       temp_prob,
       DifferentialEquations.Vern9(),
-      abstol = 1e-14,
-      reltol = 1e-14,
+      abstol = abstol,
+      reltol = reltol,
       saveat = savetime,
     )
     # if any((sol.retcode != :Success for s in sol))
