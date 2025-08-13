@@ -5,7 +5,7 @@ using RegularizedProblems
 function test_well_defined(model, nls_model, sol)
   @test typeof(model) <: NLPModel
   @test typeof(sol) == typeof(model.meta.x0)
-  @test typeof(nls_model) <: FirstOrderNLSModel
+  @test typeof(nls_model) <: NLSModel
   @test model.meta.nvar == nls_model.meta.nvar
   @test all(model.meta.x0 .== nls_model.meta.x0)
 end
@@ -110,7 +110,7 @@ end
   @test_throws ErrorException svm_train_model((10, -1))
   nlp_train, nls_train, sol = svm_train_model()
   @test typeof(nlp_train) <: NLPModel
-  @test typeof(nls_train) <: FirstOrderNLSModel
+  @test typeof(nls_train) <: NLSModel
   @test typeof(sol) == Vector{Int64}
   test_objectives(nlp_train, nls_train)
 
@@ -128,7 +128,7 @@ end
   @test_throws ErrorException svm_test_model((10, -1))
   nlp_test, nls_test, sol = svm_test_model()
   @test typeof(nlp_test) <: NLPModel
-  @test typeof(nls_test) <: FirstOrderNLSModel
+  @test typeof(nls_test) <: NLSModel
   @test typeof(sol) == Vector{Int64}
   test_objectives(nlp_test, nls_test)
 

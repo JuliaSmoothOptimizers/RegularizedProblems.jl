@@ -24,9 +24,9 @@ function nnmf_data(m::Int, n::Int, k::Int, T::DataType = Float64)
 end
 
 """
-    model, Av, selected = nnmf_model(m = 100, n = 50, k = 10, T = Float64)
+    model, nls_model, Av, selected = nnmf_model(m = 100, n = 50, k = 10, T = Float64)
 
-Return an instance of an `NLPModel` representing the non-negative matrix factorization
+Return an instance of an `NLPModel` and an `NLSModel` representing the non-negative matrix factorization
 objective
 
     f(W, H) = ½ ‖A - WH‖₂²,

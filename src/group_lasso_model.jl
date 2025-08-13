@@ -62,7 +62,7 @@ groups divides evenly into the total number of elements.
 ## Return Value
 
 An instance of an `NLPModel` that represents the group-lasso problem.
-An instance of a `FirstOrderNLSModel` that represents the group-lasso problem.
+An instance of an `NLSModel` that represents the group-lasso problem.
 Also returns true x, number of groups g, group-index denoting which groups are active, and a Matrix where rows are group indices of x.
 """
 function group_lasso_model(args...; kwargs...)

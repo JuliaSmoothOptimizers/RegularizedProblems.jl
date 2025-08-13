@@ -52,7 +52,7 @@ The second form calls the first form with arguments
 
 ## Return Value
 
-An instance of an `NLPModel` and of a `FirstOrderNLSModel` that represent the same
+An instance of an `NLPModel` and of an `NLSModel` that represent the same
 basis-pursuit denoise problem, and the exact solution x̄.
 
 If `bounds == true`, the positive part of x̄ is returned.

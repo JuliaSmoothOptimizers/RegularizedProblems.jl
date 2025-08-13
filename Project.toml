@@ -3,7 +3,7 @@ uuid = "ea076b23-609f-44d2-bb12-a4ae45328278"
 authors = [
   "Dominique Orban <dominique.orban@gmail.com>, Robert Baraldi <robertjbaraldi@gmail.com",
 ]
-version = "0.1.1"
+version = "0.1.2"
 
 [deps]
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
@@ -18,7 +18,7 @@ SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 [compat]
 ADNLPModels = "^0.3, 0.4, 0.7"
 Distributions = "0.25"
-ManualNLPModels = "0.1"
+ManualNLPModels = "0.2"
 MLDatasets = "^0.7.4"
 NLPModels = "0.16, 0.17, 0.18, 0.19, 0.20, 0.21"
 Noise = "0.2"
