@@ -1,3 +1,7 @@
+```@meta
+CurrentModule = RegularizedProblems
+```
+
 # RegularizedProblems
 
 ## Synopsis
@@ -55,3 +59,15 @@ A feature of the Fitzhugh-Nagumo model is that it reduces to the Van der Pol osc
 Thus here again, the objective is to recover a sparse solution to the data-fitting problem.
 Hence, typical regularizers are the same as those used for the basis-pursuit denoise problem.
 
+## Contributors
+
+```@raw html
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+```
