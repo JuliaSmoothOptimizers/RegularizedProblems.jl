@@ -87,7 +87,7 @@ of an `ADNLSModel` that represents the same problem, and the exact solution.
 function fh_model(; kwargs...)
   data, simulate, resid, misfit, x0 = FH_smooth_term()
   nequ = 202
-  ADNLPModels.ADNLPModel(misfit, ones(5); kwargs...),
-  ADNLPModels.ADNLSModel(resid, ones(5), nequ; kwargs...),
+  ADNLPModels.ADNLPModel(misfit, ones(5); matrix_free = true, kwargs...),
+  ADNLPModels.ADNLSModel(resid, ones(5), nequ; matrix_free = true, kwargs...),
   x0
 end
