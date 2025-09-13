@@ -11,22 +11,28 @@ LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 ManualNLPModels = "30dfa513-9b2f-4fb3-9796-781eabac1617"
 NLPModels = "a4795742-8479-5a88-8948-cc11e1c8c1a6"
 Noise = "81d43f40-5267-43b7-ae1c-8b967f377efa"
+ProximalOperators = "a725b495-10eb-56fe-b38b-717eba820537"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
-Requires = "ae029012-a4dd-5104-9daa-d747884805df"
+ShiftedProximalOperators = "d4fd37fa-580c-4e43-9b30-361c21aae263"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+
+[weakdeps]
+ADNLPModels = "54578032-b7ea-4c30-94aa-7cbd1cce6c9a"
+DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
+MLDatasets = "eb30cadb-4394-5ae3-aed4-317e484a6458"
+QuadraticModels = "f468eda6-eac5-11e8-05a5-ff9e497bcd19"
+
+[extensions]
+FHExt = ["ADNLPModels", "DifferentialEquations"]
+QPRandExt = "QuadraticModels"
+SVMExt = "MLDatasets"
 
 [compat]
 Distributions = "0.25"
 ManualNLPModels = "0.2"
 NLPModels = "0.16, 0.17, 0.18, 0.19, 0.20, 0.21"
 Noise = "0.2"
-Requires = "1"
+ProximalOperators = "0.15, 0.16"
+QuadraticModels = "0.9"
+ShiftedProximalOperators = "0.2"
 julia = "1.10"
-
-[extras]
-ADNLPModels = "54578032-b7ea-4c30-94aa-7cbd1cce6c9a"
-DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
-MLDatasets = "eb30cadb-4394-5ae3-aed4-317e484a6458"
-ProximalOperators = "a725b495-10eb-56fe-b38b-717eba820537"
-QuadraticModels = "f468eda6-eac5-11e8-05a5-ff9e497bcd19"
-ShiftedProximalOperators = "d4fd37fa-580c-4e43-9b30-361c21aae263"

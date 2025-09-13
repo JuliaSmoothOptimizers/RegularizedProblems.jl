@@ -1,6 +1,3 @@
-export qp_rand_model
-using .QuadraticModels
-
 """
     model = qp_rand_model(n = 100_000; dens = 1.0e-4, convex = false)
 
@@ -23,7 +20,11 @@ with H = A + A' or H = A * A' (see the `convex` keyword argument) where A is a r
 
 An instance of a `QuadraticModel`.
 """
-function qp_rand_model(n::Int = 100_000; dens::R = 1.0e-4, convex::Bool = false) where {R <: Real}
+function RegularizedProblems.qp_rand_model(
+  n::Int = 100_000;
+  dens::R = 1.0e-4,
+  convex::Bool = false,
+) where {R<:Real}
   @assert 0 < dens ≤ 1
   A = sprandn(R, n, n, dens)
   H = convex ? (A * A') : (A + A')

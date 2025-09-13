@@ -1,5 +1,3 @@
-export fh_model, fh_nls_model
-
 function FH_smooth_term(; abstol = 1e-14, reltol = 1e-14)
   # FH model = van-der-Pol oscillator when I = b = c = 0
   # x' = μ(x - x^3/3 - y)
@@ -84,7 +82,7 @@ constructure, e.g., to set the automatic differentiation backend.
 An instance of an `ADNLPModel` that represents the Fitzhugh-Nagumo problem, an instance
 of an `ADNLSModel` that represents the same problem, and the exact solution.
 """
-function fh_model(; kwargs...)
+function RegularizedProblems.fh_model(; kwargs...)
   data, simulate, resid, misfit, x0 = FH_smooth_term()
   nequ = 202
   ADNLPModels.ADNLPModel(misfit, ones(5); kwargs...),

@@ -1,5 +1,3 @@
-export svm_train_model, svm_test_model, svm_model
-
 function tan_data_train(args...)
   #load data
   A, b = MLDatasets.MNIST(split = :train)[:]
@@ -13,7 +11,7 @@ function tan_data_test(args...)
   return A, b
 end
 
-function generate_data(A, b, digits::Tuple{Int, Int} = (1, 7), switch::Bool = false)
+function generate_data(A, b, digits::Tuple{Int,Int} = (1, 7), switch::Bool = false)
   length(digits) == 2 || error("please supply two digits only")
   digits[1] != digits[2] || error("please supply two different digits")
   all(0 .≤ digits .≤ 9) || error("please supply digits from 0 to 9")
@@ -24,9 +22,9 @@ function generate_data(A, b, digits::Tuple{Int, Int} = (1, 7), switch::Bool = fa
   #get 0s and 1s
   b = b[ind]
   b[b .== digits[2]] .= -1
-  A = convert(Array{Float64, 2}, A[:, ind])
+  A = convert(Array{Float64,2}, A[:, ind])
   if switch
-    p = randperm(length(b))[1:Int(floor(length(b) / 3))]
+    p = randperm(length(b))[1:Int(floor(length(b)/3))]
     b = b[p]
     A = A[:, p]
   end
@@ -98,5 +96,5 @@ function svm_model(A, b)
   b
 end
 
-svm_train_model(args...) = svm_model(tan_data_train(args...)...)
-svm_test_model(args...) = svm_model(tan_data_test(args...)...)
+RegularizedProblems.svm_train_model(args...) = svm_model(tan_data_train(args...)...)
+RegularizedProblems.svm_test_model(args...) = svm_model(tan_data_test(args...)...)
