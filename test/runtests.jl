@@ -1,5 +1,6 @@
 using LinearAlgebra, Test
-using ADNLPModels, DifferentialEquations, ManualNLPModels, MLDatasets, NLPModels, QuadraticModels
+using ADNLPModels,
+  DifferentialEquations, ManualNLPModels, MLDatasets, NLPModels, QuadraticModels
 using RegularizedProblems
 
 function test_well_defined(model, nls_model, sol)
@@ -142,7 +143,7 @@ end
 @testset "NNMF" begin
   m, n, k = 100, 50, 10
   model, nls_model, sol, selected = nnmf_model(m, n, k)
-  @test selected == (m * k + 1):((m + n) * k)
+  @test selected == (m*k+1):((m+n)*k)
   test_well_defined(model, nls_model, sol)
   @test nls_model.nls_meta.nequ == m * n
   @test all(model.meta.lvar .== 0)
