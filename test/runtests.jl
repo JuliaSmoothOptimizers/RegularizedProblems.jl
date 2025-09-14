@@ -5,7 +5,8 @@ using ADNLPModels,
   MLDatasets,
   NLPModels,
   ProximalOperators,
-  QuadraticModels
+  QuadraticModels,
+  SciMLSensitivity
 using RegularizedProblems
 
 function test_well_defined(model, nls_model, sol)

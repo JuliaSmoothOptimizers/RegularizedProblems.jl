@@ -5,7 +5,6 @@ using Random
 using ManualNLPModels, NLPModels, ShiftedProximalOperators
 using Distributions, Noise, ProximalOperators
 
-
 include("utils.jl")
 include("types.jl")
 include("bpdn_model.jl")
@@ -49,21 +48,5 @@ function setup_svm_train_l0 end
 function setup_svm_test_l0 end
 function setup_svm_train_l1 end
 function setup_svm_test_l1 end
-
-# function __init__()
-#   # @require ADNLPModels = "54578032-b7ea-4c30-94aa-7cbd1cce6c9a" begin
-#   #   @require DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa" begin
-#   #     include("fh_model.jl")
-#   #     include("testset_fh.jl")
-#   #   end
-#   # end
-#   # @require MLDatasets = "eb30cadb-4394-5ae3-aed4-317e484a6458" begin
-#   #   include("nonlin_svm_model.jl")
-#   #   include("testset_svm.jl")
-#   # end
-#   # @require QuadraticModels = "f468eda6-eac5-11e8-05a5-ff9e497bcd19" begin
-#   #   include("qp_rand_model.jl")
-#   # end
-# end
 
 end

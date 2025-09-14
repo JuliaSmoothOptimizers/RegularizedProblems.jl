@@ -1,7 +1,7 @@
 module FHExt
 
 using LinearAlgebra
-using DifferentialEquations
+using DifferentialEquations, SciMLSensitivity
 using ADNLPModels, RegularizedProblems
 
 include("fh_model.jl")
