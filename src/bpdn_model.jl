@@ -1,4 +1,4 @@
-export bpdn_model, bpdn_nls_model
+export bpdn_model
 
 function bpdn_data(m::Int, n::Int, k::Int, noise::Float64 = 0.01; bounds::Bool = false)
   m ≤ n || error("number of rows ($m) should be ≤ number of columns ($n)")
