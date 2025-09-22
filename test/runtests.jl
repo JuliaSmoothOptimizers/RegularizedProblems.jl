@@ -6,8 +6,14 @@ using ADNLPModels,
   MLDatasets,
   NLPModels,
   ProximalOperators,
-  QuadraticModels,
-  SciMLSensitivity
+  QuadraticModels
+
+# This package is skipped on FreeBSD due to issues with SciMLSensitivity and Enzyme packages
+
+if !Sys.isfreebsd()
+  using SciMLSensitivity
+end
+
 using RegularizedProblems
 
 function test_well_defined(model, nls_model, sol)
