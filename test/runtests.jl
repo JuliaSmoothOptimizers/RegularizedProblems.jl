@@ -1,11 +1,17 @@
 using LinearAlgebra, Test
 using Aqua
-using ManualNLPModels, MLDatasets, NLPModels, ProximalOperators, QuadraticModels
+using ADNLPModels,
+  DifferentialEquations,
+  ManualNLPModels,
+  MLDatasets,
+  NLPModels,
+  ProximalOperators,
+  QuadraticModels
 
-# Skip these packages on FreeBSD due to Enzyme.jl precompilation issues; FH tests are not run on FreeBSD.
+# This package is skipped on FreeBSD due to issues with SciMLSensitivity and Enzyme packages
 
 if !Sys.isfreebsd()
-  using ADNLPModels, DifferentialEquations, SciMLSensitivity
+  using SciMLSensitivity
 end
 
 using RegularizedProblems
