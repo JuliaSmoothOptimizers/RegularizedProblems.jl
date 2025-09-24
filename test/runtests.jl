@@ -46,7 +46,7 @@ The file will be automatically included inside a `@testset` with title "Title Fo
 =#
 
 @testset "Aqua" begin
-    Aqua.test_all(RegularizedProblems; ambiguities = false)
+  Aqua.test_all(RegularizedProblems; ambiguities = false)
 end
 
 for (root, dirs, files) in walkdir(@__DIR__)
