@@ -1,12 +1,19 @@
 using LinearAlgebra, Test
+using Aqua
 using ADNLPModels,
   DifferentialEquations,
   ManualNLPModels,
   MLDatasets,
   NLPModels,
   ProximalOperators,
-  QuadraticModels,
-  SciMLSensitivity
+  QuadraticModels
+
+# This package is skipped on FreeBSD due to issues with SciMLSensitivity and Enzyme packages
+
+if !Sys.isfreebsd()
+  using SciMLSensitivity
+end
+
 using RegularizedProblems
 
 function test_well_defined(model, nls_model, sol)
@@ -37,6 +44,11 @@ Don't add your tests to runtests.jl. Instead, create files named
 
 The file will be automatically included inside a `@testset` with title "Title For My Test".
 =#
+
+@testset "Aqua" begin
+  Aqua.test_all(RegularizedProblems; ambiguities = false)
+end
+
 for (root, dirs, files) in walkdir(@__DIR__)
   for file in files
     if isnothing(match(r"^test-.*\.jl$", file))
