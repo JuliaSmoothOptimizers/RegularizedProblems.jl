@@ -1,9 +1,30 @@
 module RegularizedProblems
 
-using LinearAlgebra, SparseArrays
-using Random
-using ManualNLPModels, NLPModels, ShiftedProximalOperators
-using Distributions, Noise, ProximalOperators
+import Base: /, convert
+
+import Distributions
+using Distributions: MixtureModel, MvNormal, Uniform
+
+import LinearAlgebra
+using LinearAlgebra: I, dot, mul!, norm, qr
+
+import NLPModels
+using NLPModels:
+  AbstractNLPModel, AbstractNLSModel, Counters, NLSCounters, get_nvar, grad!, obj
+
+import ManualNLPModels
+using ManualNLPModels: NLPModel, NLSModel
+
+import Noise
+using Noise: add_gauss
+
+import ProximalOperators
+import ShiftedProximalOperators
+
+import Random
+using Random: randperm
+
+import SparseArrays
 
 include("utils.jl")
 include("types.jl")
