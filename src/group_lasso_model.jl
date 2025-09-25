@@ -9,8 +9,10 @@ function group_lasso_data(;
   compound::Int = 1,
 )
   m ≤ n || error("number of rows ($m) should be ≤ number of columns ($n)")
-  mod(n, g) == 0 || error("number of groups ($g) must divide evenly into number of rows ($n)")
-  ag ≤ g || error("number of active groups ($ag) must be smaller than the number of groups ($g)")
+  mod(n, g) == 0 ||
+    error("number of groups ($g) must divide evenly into number of rows ($n)")
+  ag ≤ g ||
+    error("number of active groups ($ag) must be smaller than the number of groups ($g)")
   compound > 0 || error("compound factor must be positive")
 
   m = compound * m

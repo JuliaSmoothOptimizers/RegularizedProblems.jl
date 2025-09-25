@@ -29,9 +29,11 @@ regularized optimization such as those in [RegularizedOptimization.jl](https://g
 ### Basis-pursuit denoise
 
 Calling `model = bpdn_model()` returns a model representing the smooth underdetermined linear least-squares residual
+
 ```math
 f(x) = \tfrac{1}{2} \|Ax - b\|_2^2,
 ```
+
 where $A$ has orthonormal rows.
 The right-hand side is generated as $b = A x_{\star} + \varepsilon$ where $x_{\star}$ is a sparse vector, $\varepsilon \sim \mathcal{N}(0, \sigma)$ and $\sigma \in (0, 1)$ is a fixed noise level.
 
@@ -50,9 +52,11 @@ Calling `model = bpdn_nls_model()` returns the same problem modeled explicitly a
 ### Fitzhugh-Nagumo data-fitting problem
 
 If `ADNLPModels` and `DifferentialEquations` have been imported, `model = fh_model()` returns a model representing the over-determined nonlinear least-squares residual
+
 ```math
 f(x) = \tfrac{1}{2} \|F(x)\|_2^2,
 ```
+
 where $F: \mathbb{R}^5 \to \mathbb{R}^{202}$ represents the residual between a simulation of the [Fitzhugh-Nagumo system](https://en.wikipedia.org/wiki/FitzHugh–Nagumo_model) with parameters $x$ and a simulation of the [Van der Pol oscillator](https://en.wikipedia.org/wiki/Van_der_Pol_oscillator) with preset, but unknown, parameters $x_{\star}$.
 
 A feature of the Fitzhugh-Nagumo model is that it reduces to the Van der Pol oscillator when certain parameters are set to zero.

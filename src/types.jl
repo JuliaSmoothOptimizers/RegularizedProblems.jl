@@ -6,7 +6,7 @@ export AbstractRegularizedNLPModel, RegularizedNLPModel, RegularizedNLSModel
 @deprecate FirstOrderNLSModel(r!, jv!, jtv!, nequ, x; kwargs...) NLSModel(x, r!, nequ; jprod = jv!, jtprod = jtv!, kwargs...)
 #! format: on
 
-abstract type AbstractRegularizedNLPModel{T, S} <: AbstractNLPModel{T, S} end
+abstract type AbstractRegularizedNLPModel{T,S} <: AbstractNLPModel{T,S} end
 
 """
     rmodel = RegularizedNLPModel(model, regularizer)
@@ -30,28 +30,28 @@ This aggregate type can be used to call solvers with a single object representin
 model, but is especially useful for use with SolverBenchmark.jl, which expects problems
 to be defined by a single object.
 """
-mutable struct RegularizedNLPModel{T, S, M <: AbstractNLPModel{T, S}, H, I} <:
-               AbstractRegularizedNLPModel{T, S}
+mutable struct RegularizedNLPModel{T,S,M<:AbstractNLPModel{T,S},H,I} <:
+               AbstractRegularizedNLPModel{T,S}
   model::M     # smooth  model
   h::H         # regularizer
   selected::I  # set of variables to which the regularizer should be applied
 end
 
-function RegularizedNLPModel(model::AbstractNLPModel{T, S}, h::H) where {T, S, H}
+function RegularizedNLPModel(model::AbstractNLPModel{T,S}, h::H) where {T,S,H}
   selected = 1:get_nvar(model)
-  RegularizedNLPModel{T, S, typeof(model), typeof(h), typeof(selected)}(model, h, selected)
+  RegularizedNLPModel{T,S,typeof(model),typeof(h),typeof(selected)}(model, h, selected)
 end
 
-mutable struct RegularizedNLSModel{T, S, M <: AbstractNLSModel{T, S}, H, I} <:
-               AbstractRegularizedNLPModel{T, S}
+mutable struct RegularizedNLSModel{T,S,M<:AbstractNLSModel{T,S},H,I} <:
+               AbstractRegularizedNLPModel{T,S}
   model::M     # smooth  model
   h::H         # regularizer
   selected::I  # set of variables to which the regularizer should be applied
 end
 
-function RegularizedNLSModel(model::AbstractNLSModel{T, S}, h::H) where {T, S, H}
+function RegularizedNLSModel(model::AbstractNLSModel{T,S}, h::H) where {T,S,H}
   selected = 1:get_nvar(model)
-  RegularizedNLSModel{T, S, typeof(model), typeof(h), typeof(selected)}(model, h, selected)
+  RegularizedNLSModel{T,S,typeof(model),typeof(h),typeof(selected)}(model, h, selected)
 end
 
 function NLPModels.obj(rnlp::AbstractRegularizedNLPModel, x::AbstractVector)
