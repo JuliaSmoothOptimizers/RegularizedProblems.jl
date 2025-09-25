@@ -45,11 +45,11 @@ function nnmf_model(m::Int = 100, n::Int = 50, k::Int = 10, T::DataType = Float6
   WH = similar(A)
   gw = similar(A, (m, k))
   gh = similar(A, (k, n))
-  selected = (m * k + 1):((m + n) * k)
+  selected = (m*k+1):((m+n)*k)
 
   function resid!(r, x)
-    W = reshape_array(view(x, 1:(m * k)), (m, k))
-    H = reshape_array(view(x, (m * k + 1):((m + n) * k)), (k, n))
+    W = reshape_array(view(x, 1:(m*k)), (m, k))
+    H = reshape_array(view(x, (m*k+1):((m+n)*k)), (k, n))
     mul!(WH, W, H)
     for i ∈ eachindex(r)
       r[i] = A[i] - WH[i]
@@ -66,24 +66,24 @@ function nnmf_model(m::Int = 100, n::Int = 50, k::Int = 10, T::DataType = Float6
     resid!(r, x)
     minusR = reshape_array(r, (m, n))
     minusR .*= -1
-    W_T = reshape_array(view(x, 1:(m * k)), (m, k))'
-    H_T = reshape_array(view(x, (m * k + 1):((m + n) * k)), (k, n))'
+    W_T = reshape_array(view(x, 1:(m*k)), (m, k))'
+    H_T = reshape_array(view(x, (m*k+1):((m+n)*k)), (k, n))'
     mul!(gw, minusR, H_T)
     mul!(gh, W_T, minusR)
     for i ∈ eachindex(gw)
       g[i] = gw[i]
     end
     for i ∈ eachindex(gh)
-      g[i + m * k] = gh[i]
+      g[i+m*k] = gh[i]
     end
     return g
   end
 
   function jacv!(Jv, x, v)
-    W = reshape_array(view(x, 1:(m * k)), (m, k))
-    H = reshape_array(view(x, (m * k + 1):((m + n) * k)), (k, n))
-    W_v = reshape_array(view(v, 1:(m * k)), (m, k))
-    H_v = reshape_array(view(v, (m * k + 1):((m + n) * k)), (k, n))
+    W = reshape_array(view(x, 1:(m*k)), (m, k))
+    H = reshape_array(view(x, (m*k+1):((m+n)*k)), (k, n))
+    W_v = reshape_array(view(v, 1:(m*k)), (m, k))
+    H_v = reshape_array(view(v, (m*k+1):((m+n)*k)), (k, n))
     mul!(WH, W_v, H)
     for i ∈ eachindex(WH)
       Jv[i] = -WH[i]
@@ -96,8 +96,8 @@ function nnmf_model(m::Int = 100, n::Int = 50, k::Int = 10, T::DataType = Float6
   end
 
   function jactv!(Jtv, x, w)
-    W_T = reshape_array(view(x, 1:(m * k)), (m, k))'
-    H_T = reshape_array(view(x, (m * k + 1):((m + n) * k)), (k, n))'
+    W_T = reshape_array(view(x, 1:(m*k)), (m, k))'
+    H_T = reshape_array(view(x, (m*k+1):((m+n)*k)), (k, n))'
     X_v = reshape_array(w, (m, n))
     mul!(gw, X_v, H_T)
     mul!(gh, W_T, X_v)
@@ -105,7 +105,7 @@ function nnmf_model(m::Int = 100, n::Int = 50, k::Int = 10, T::DataType = Float6
       Jtv[i] = -gw[i]
     end
     for i ∈ eachindex(gh)
-      Jtv[i + m * k] = -gh[i]
+      Jtv[i+m*k] = -gh[i]
     end
     return Jtv
   end
