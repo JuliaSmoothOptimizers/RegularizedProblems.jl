@@ -13,9 +13,6 @@ Chouzenoux, E., Martin, S. & Pesquet, JC.
 A Local MM Subspace Method for Solving Constrained Variational Problems in Image Recovery. 
 J Math Imaging Vis 65, 253–276 (2023). https://doi.org/10.1007/s10851-022-01112-z
 """
-# non-allocating reshape
-# see https://github.com/JuliaLang/julia/issues/36313
-reshape_array(a, dims) = invoke(Base._reshape, Tuple{AbstractArray, typeof(dims)}, a, dims)
 
 # Function to unpad an array
 function unpad(x, n_p, m_p, n)
