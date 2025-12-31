@@ -45,6 +45,18 @@ function binomial_model(A, b)
     jacv!(Jtv, x, v)
   end
 
+  # Hessian-vector product (H * v). Matches the common `hprod!(nlp, x, v, Hv)` API
+  function hprod!(nlp, x, v, Hp)
+    mul!(Ax, A', x)
+    @. w = 1.0 / (1.0 + exp(-Ax))
+    @. w = w * (1.0 - w)
+
+    mul!(tmp_n, A', v)
+    @. tmp_n *= w
+    mul!(Hp, A, tmp_n)
+    return Hp
+  end
+
   function obj(x)
     mul!(Ax, A', x)
     # Stable computation of log(1+exp(z)) - b*z
@@ -57,6 +69,7 @@ function binomial_model(A, b)
 
   x0 = zeros(m)
   
-  return FirstOrderModel(obj, grad!, x0, name="Binomial"),
-         FirstOrderNLSModel(resid!, jacv!, jactv!, m, x0)
+    # Construct an NLPModel directly so we can register `hprod!` properly
+    nlp = ManualNLPModels.NLPModel(x0, obj; grad = grad!, hprod = hprod!, meta_args = Dict(:name => "Binomial"))
+    return nlp, FirstOrderNLSModel(resid!, jacv!, jactv!, m, x0)
 end
