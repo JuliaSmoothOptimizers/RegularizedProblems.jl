@@ -16,7 +16,7 @@ using ProximalOperators
   obj(nls_model, nls_model.meta.x0)
   @test neval_obj(rlsmodel) == neval_obj(nls_model)
   rmodel_lbfgs = RegularizedNLPModel(LBFGSModel(model), h)
-  @test typeof(hess_op(rmodel_lbfgs)) <: LBFGSOperator
+  @test typeof(hess_op(rmodel_lbfgs, model.meta.x0)) <: LBFGSOperator
 end
 
 @testset "Problem combos" begin
