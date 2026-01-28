@@ -39,4 +39,14 @@ ShiftedProximalOperators = "d4fd37fa-580c-4e43-9b30-361c21aae263"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["ADNLPModels", "DifferentialEquations", "LinearOperators", "MLDatasets", "NLPModelsModifiers", "ProximalOperators", "QuadraticModels", "ShiftedProximalOperators", "Test"]
+test = [
+  "ADNLPModels", 
+  "DifferentialEquations", 
+  "LinearOperators", 
+  "MLDatasets", 
+  "NLPModelsModifiers", 
+  "ProximalOperators", 
+  "QuadraticModels", 
+  "ShiftedProximalOperators", 
+  "Test"
+]
