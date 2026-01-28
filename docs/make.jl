@@ -1,5 +1,4 @@
 using Documenter
-using ADNLPModels, DifferentialEquations, QuadraticModels
 using RegularizedProblems
 
 makedocs(

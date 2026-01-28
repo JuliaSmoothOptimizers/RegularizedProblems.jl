@@ -1,9 +1,6 @@
 [deps]
-ADNLPModels = "54578032-b7ea-4c30-94aa-7cbd1cce6c9a"
-DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 MLDatasets = "eb30cadb-4394-5ae3-aed4-317e484a6458"
-QuadraticModels = "f468eda6-eac5-11e8-05a5-ff9e497bcd19"
 RegularizedProblems = "ea076b23-609f-44d2-bb12-a4ae45328278"
 
 [compat]
