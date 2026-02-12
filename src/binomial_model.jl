@@ -9,7 +9,9 @@ export binomial_model
 Return an instance of an `NLPModel` representing the binomial logistic regression problem.
 
 Minimize
+
     f(x) = sum( log(1 + exp(a_i' * x)) - b_i * (a_i' * x) )
+
 where b_i ∈ {0, 1} and `A` is (m features) × (n samples).
 Equivalently, z = A' * x (length n).
 """
