@@ -69,10 +69,6 @@ function NLPModels.hess(rnlp::AbstractRegularizedNLPModel, x::AbstractVector; ob
   return hess(rnlp.model, x; obj_weight=obj_weight)
 end
 
-function NLPModels.hess(rnlp::AbstractRegularizedNLPModel, x::AbstractVector, y::AbstractVector; obj_weight=1.0)
-  return hess(rnlp.model, x, y; obj_weight=obj_weight)
-end
-
 
 # Forward meta getters so they grab info from the smooth model
 for field ∈ fieldnames(NLPModels.NLPModelMeta)
