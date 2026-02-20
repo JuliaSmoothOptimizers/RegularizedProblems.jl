@@ -1,5 +1,12 @@
 using LinearAlgebra, Test
-using ADNLPModels, DifferentialEquations, LinearOperators, ManualNLPModels, MLDatasets, NLPModels, NLPModelsModifiers, QuadraticModels
+using ADNLPModels,
+  DifferentialEquations,
+  LinearOperators,
+  ManualNLPModels,
+  MLDatasets,
+  NLPModels,
+  NLPModelsModifiers,
+  QuadraticModels
 using RegularizedProblems
 
 function test_well_defined(model, nls_model, sol)
