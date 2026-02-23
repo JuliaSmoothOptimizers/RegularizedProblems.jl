@@ -53,7 +53,7 @@ test = [
   "MathOptInterface", 
   "MLDatasets", 
   "NLPModelsModifiers", 
-  "NLPModelsTest"
+  "NLPModelsTest",
   "ProximalOperators", 
   "QuadraticModels", 
   "ShiftedProximalOperators", 
