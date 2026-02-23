@@ -1,4 +1,4 @@
-export bpdn_model, bpdn_nls_model
+export bp_data, bp_model
 
 function bp_data(m::Int, n::Int, k::Int; bounds::Bool = false)
   m ≤ n || error("number of rows ($m) should be ≤ number of columns ($n)")
@@ -58,10 +58,14 @@ bp_model(;compound::Int = 1, bounds::Bool = false) =
 
 function bp_model(m::Int, n::Int, k::Int; bounds::Bool = false)
   A, b, x0 = bp_data(m, n, k; bounds = bounds)
-  T = eltype(x0)
+  return bp_model(A, b, x0; bounds = bounds)
+end
+
+function bp_model(A::AbstractMatrix{T}, b::AbstractVector{T}, x0::AbstractVector{T}; bounds::Bool = false) where{T}
+  m, n = size(A)
 
   # Constrained API
-  function cons!(x, cx)
+  function cons!(cx, x)
     cx .= b
     mul!(cx, A, x, one(eltype(x)), -one(eltype(x)))
   end
@@ -79,17 +83,18 @@ function bp_model(m::Int, n::Int, k::Int; bounds::Bool = false)
   end
 
   function hess_coord!(vals, x, y; obj_weight = one(T))
-    return 
+    return zeros(T, 0)
   end
 
-  rows_jac = repeat(1:m, inner = n)
-  cols_jac = repeat(1:n, outer = m)
+  rows_jac = repeat(1:m, outer = n)
+  cols_jac = repeat(1:n, inner = m)
 
   function jac_coord!(vals, x)
     m, n = size(A)
     @inbounds for j in 1:n
       offset = (j-1)*m
       @inbounds for i in 1:m
+        k = i + offset
         vals[k] = A[i, j]
       end
     end
@@ -109,7 +114,7 @@ function bp_model(m::Int, n::Int, k::Int; bounds::Bool = false)
   end
 
   function hess_coord!(vals, x; obj_weight = one(T))
-    return 
+    return zeros(T, 0)
   end
 
   nlp = NLPModel(
@@ -124,7 +129,6 @@ function bp_model(m::Int, n::Int, k::Int; bounds::Bool = false)
     jtprod = jtprod!,
     jac_coord = (rows_jac, cols_jac, jac_coord!)
   )
-
 
   return nlp, x0
 end
