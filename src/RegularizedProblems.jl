@@ -24,7 +24,7 @@ function __init__()
     include("testset_group_lasso.jl")
   end
   @require ADNLPModels = "54578032-b7ea-4c30-94aa-7cbd1cce6c9a" begin
-    @require DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa" begin
+    @require OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed" begin
       include("fh_model.jl")
       @require ProximalOperators = "a725b495-10eb-56fe-b38b-717eba820537" begin
         include("testset_fh.jl")
