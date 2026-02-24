@@ -15,50 +15,36 @@ function FH_smooth_term(; abstol = 1e-14, reltol = 1e-14)
   tspan = (0.0, 20.0)
   savetime = 0.2
 
-  pars_FH = [0.5, 0.08, 1.0, 0.8, 0.7]
-  prob_FH = DifferentialEquations.ODEProblem(FH_ODE, u0, tspan, pars_FH)
-
   x0 = [0, 0.2, 1.0, 0, 0]
-  prob_VDP = DifferentialEquations.ODEProblem(FH_ODE, u0, tspan, x0)
-  sol_VDP = DifferentialEquations.solve(prob_VDP, reltol = 1e-6, saveat = savetime)
+  prob = ODEProblem(FH_ODE, u0, tspan, x0)
+  alg = Vern9()
+  integrator = init(prob, alg, abstol = abstol, reltol = reltol, p = x0, saveat = savetime)
+  solve!(integrator)
+
 
   # add random noise to vdP solution
-  t = sol_VDP.t
-  b = vec(sol_VDP)
-  noise = 0.1 * randn(size(b))
-  data = noise .+ b
-
-  # solve FH with parameters p
-  function simulate(p, abstol = 1e-14, reltol = 1e-14)
-    temp_prob = DifferentialEquations.remake(prob_FH, p = p)
-    sol = DifferentialEquations.solve(
-      temp_prob,
-      DifferentialEquations.Vern9(),
-      abstol = abstol,
-      reltol = reltol,
-      saveat = savetime,
-    )
-    # if any((sol.retcode != :Success for s in sol))
-    #   @warn "ODE solution failed with parameters" p'
-    #   error("ODE solution failed")
-    # end
-    return vec(sol)
-  end
+  noise = 0.1 * randn(length(integrator.sol.u), 2)
+  noise = collect(eachrow(noise))
+  data = noise + integrator.sol.u
+  temp = similar(data)
 
   # define residual vector
-  function residual(p, args...)
-    F = simulate(p, args...)
-    F .-= data
+  function residual!(F, x)
+    if integrator.p != x
+      reinit!(integrator; p = x)
+      solve!(integrator)
+    end
+    F .= integrator.sol.u .- data
     return F
   end
 
   # misfit = ‖residual‖² / 2
-  function misfit(p, args...)
-    F = residual(p, args...)
-    return dot(F, F) / 2
+  function misfit(x)
+    residual!(temp, x)
+    return dot(temp, temp) / 2
   end
 
-  return data, simulate, residual, misfit, x0
+  return data, residual!, misfit, x0
 end
 
 """
@@ -85,7 +71,7 @@ An instance of an `ADNLPModel` that represents the Fitzhugh-Nagumo problem, an i
 of an `ADNLSModel` that represents the same problem, and the exact solution.
 """
 function fh_model(; kwargs...)
-  data, simulate, resid, misfit, x0 = FH_smooth_term()
+  data, resid, misfit, x0 = FH_smooth_term()
   nequ = 202
   ADNLPModels.ADNLPModel(misfit, ones(5); kwargs...),
   ADNLPModels.ADNLSModel(resid, ones(5), nequ; kwargs...),
