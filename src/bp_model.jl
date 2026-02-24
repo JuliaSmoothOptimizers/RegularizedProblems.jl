@@ -16,27 +16,31 @@ function bp_data(m::Int, n::Int, k::Int; bounds::Bool = false)
   A, b, x0
 end
 
-bp_data(;compound::Int = 1, bounds::Bool = false) =
-  bp_data(200 * compound, 512 * compound, 10 * compound; bounds = bounds)
+bp_data(; compound::Int = 1, bounds::Bool = false) =
+  bp_data(200 * compound, 512 * compound, 10 * compound, bounds = bounds)
 
 """
+    model, sol = bp_model(A, b, x0; bounds = false)
     model, sol = bp_model(m, n, k; bounds = false)
-    model, sol = bp_model(compound = 1, bounds = false)
+    model, sol = bp_model(; compound = 1, bounds = false)
 
 Return an instance of an `NLPModel` representing the basis-pursuit problem, 
 i.e., the under-determined linear constraint
 
    Ax = b,
 
-where A has orthonormal rows and b = A * x̄, where x̄ is sparse.
+where A has orthonormal rows and b = A * x0, where x0 is sparse.
 
 ## Arguments
 
-* `m :: Int`: the number of rows of A
-* `n :: Int`: the number of columns of A (with `n` ≥ `m`)
-* `k :: Int`: the number of nonzero elements in x̄
+* `A :: AbstractMatrix{T}`: the matrix A, should have orthonormal rows;
+* `b::AbstractVector{T}`: the right-hand side b;
+* `x0::AbstractVector{T}`: the sparse signal x0.
 
-The second form calls the first form with arguments
+The second form generates a matrix A of size m times n, a right hand side b and a sparse signal x0 
+and calls the first calling form (see `bp_data`).
+
+The third form calls the second form with arguments
 
     m = 200 * compound
     n = 512 * compound
@@ -54,7 +58,7 @@ basis-pursuit problem, and the exact solution x̄.
 If `bounds == true`, the positive part of x̄ is returned.
 """
 bp_model(;compound::Int = 1, bounds::Bool = false) = 
-  bp_model(200 * compound, 512 * compound, 10 * compound; bounds = bounds)
+  bp_model(200 * compound, 512 * compound, 10 * compound, bounds = bounds)
 
 function bp_model(m::Int, n::Int, k::Int; bounds::Bool = false)
   A, b, x0 = bp_data(m, n, k; bounds = bounds)

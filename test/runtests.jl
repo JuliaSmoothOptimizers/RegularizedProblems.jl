@@ -30,6 +30,12 @@ end
   A, b, x0 = bp_data()
   model, sol = bp_model(A, b, x0)
 
+  # Test basics
+  @test model.meta.nvar == 512
+  @test model.meta.ncon == 200
+  @test Int(norm(x0, 0)) == 10
+  @test A*x0 ≈ b
+
   # Construct ADModel to compare with ManualNLPModels model
   f(x) = zero(eltype(x))
   c(x) = A*x - b
