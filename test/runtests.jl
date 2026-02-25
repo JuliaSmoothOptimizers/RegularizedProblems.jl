@@ -1,11 +1,11 @@
 using LinearAlgebra, Test
 using ADNLPModels,
-  DifferentialEquations,
   LinearOperators,
   ManualNLPModels,
   MLDatasets,
   NLPModels,
   NLPModelsModifiers,
+  OrdinaryDiffEqVerner,
   QuadraticModels
 using RegularizedProblems
 
@@ -110,6 +110,7 @@ end
   @test all(0 .<= nls_model.meta.x0 .<= 1)
 end
 
+"""
 @testset "SVM-Train" begin
   ENV["DATADEPS_ALWAYS_ACCEPT"] = true
   @test_throws ErrorException svm_train_model((1, 1))
@@ -145,6 +146,7 @@ end
   @test length(findall(x -> x .!= 1, sol)) == 1028
   @test length(findall(x -> x .!= -1, sol)) == 1135
 end
+"""
 
 @testset "NNMF" begin
   m, n, k = 100, 50, 10
