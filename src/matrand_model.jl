@@ -1,4 +1,4 @@
-export random_matrix_completion_model, MIT_matrix_completion_model
+export random_matrix_completion_model, random_matrix_completion_eq_model, MIT_matrix_completion_model
 
 function mat_rand(m::Int, n::Int, r::Int, sr::Float64, va::Float64, vb::Float64, c::Float64)
   xl = rand(Uniform(-0.1, 0.3), m, r)
@@ -9,7 +9,7 @@ function mat_rand(m::Int, n::Int, r::Int, sr::Float64, va::Float64, vb::Float64,
   B = (1 - c) * add_gauss(B, va, 0; clip = true) + c * add_gauss(B, vb, 0; clip = true)
   ω = zeros(Int64, size(Ω, 1))   # Vectorize Omega
   for i = 1:size(Ω, 1)
-    ω[i] = Ω[i][1] + size(Ω, 2) * (Ω[i][2] - 1)
+    ω[i] = Ω[i][1] + n * (Ω[i][2] - 1)
   end
   return xs, B, ω
 end
@@ -118,3 +118,76 @@ function MIT_matrix_completion_model()
   X, B, ω = perturb(I, 0.8, 0.8)
   matrix_completion_model(X, B, ω)
 end
+
+function random_matrix_completion_eq_model(
+  m::Int = 100,
+  n::Int = 100,
+  r::Int = 5,
+  sr::Float64 = 0.8,
+  mode = :forward
+)
+  xs, B, ω = mat_rand(m, n, r, sr, 0.0, 0.0, 0.0)
+  xs = collect(vec(xs))
+
+  # Constrained API
+  function c!(cx, x)
+    @views cx .= x[ω] .- B
+  end
+
+  function jprod!(jv, x, v)
+    @views jv .= v[ω]
+  end
+
+  function jtprod!(jtv, x, v)
+    jtv .= 0
+    @views jtv[ω] .= v
+  end
+
+  function hprod!(hv, x, y, v; obj_weight = one(T))
+    return hv .= 0
+  end
+
+  function hess_coord!(vals, x, y; obj_weight = one(T))
+    return zeros(Float64, 0)
+  end
+
+  rows_jac = collect(1:length(ω))
+  cols_jac = ω
+
+  function jac_coord!(vals, x)
+    vals .= 1
+  end
+
+  # Unconstrained API
+  function obj(x)
+    return 0.0
+  end
+
+  function grad!(g, x)
+    g .= 0
+  end
+
+  function hprod!(hv, x, v; obj_weight = 1.0)
+    return hv .= 0
+  end
+
+  function hess_coord!(vals, x; obj_weight = 1.0)
+    return zeros(Float64, 0)
+  end
+
+  nlp = NLPModel(
+    zero(xs), 
+    obj, 
+    grad = grad!,
+    hprod = hprod!,
+    hess_coord = (zeros(Float64, 0), zeros(Float64, 0), hess_coord!),
+    cons = (cons!, zero(B), zero(B)),
+    jprod = jprod!,
+    jtprod = jtprod!,
+    jac_coord = (rows_jac, cols_jac, jac_coord!)
+  )
+
+  return nlp, xs
+
+end
+
