@@ -125,16 +125,16 @@ end
 Return an instance of an `NLPModel` representing the equality-constrained 
 matrix completion problem in forward mode, i.e., the linear constraint
 
-$$ X_{ij} = A_{ij} \ \forall i,j \in E, $$
+`` X_{ij} = A_{ij} \\ \\forall i,j \\in E, ``
 
-where $ E \subseteq \mathbb{R}^m \times \mathbb{R}^n $.
+where `` E \\subseteq \\mathbb{R}^m \\times \\mathbb{R}^n ``.
 Alternatively, one can also represent the equality-constrained 
 matrix completion problem in backward mode, i.e, the optimization problem
 
-$$ \min_{\sigma, U, V} 0 \quad \text{s.t.} \ U^T U = I, \ V^T V = I, \ \sum_k \sigma_k u_k^i v_k^j = A_{ij}.$$
+`` \\min_{\\sigma, U, V} 0 \\quad \\text{s.t.} \\ U^T U = I, \\ V^T V = I, \\ \\sum_k \\sigma_k u_k^i v_k^j = A_{ij}.``
 
-where $ \sigma \in \mathbb{R}^l $, $ U \in \mathbb{R}^m \times \mathbb{R}^l $ and 
-$ V \in \mathbb{R}^l \times \mathbb{R}^n $ with $ l \coloneqq \min\{m, n\} $.
+where `` \\sigma \\in \\mathbb{R}^l ``, `` U \\in \\mathbb{R}^m \\times \\mathbb{R}^l `` and 
+`` V \\in \\mathbb{R}^l \\times \\mathbb{R}^n `` with `` l \\coloneqq \\min\\{m, n\\} ``.
 
 ## Keyword Arguments
 
