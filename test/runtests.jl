@@ -1,5 +1,6 @@
 using LinearAlgebra, Test
-using ADNLPModels, DifferentialEquations, LinearOperators, ManualNLPModels, MLDatasets, NLPModels, NLPModelsModifiers, QuadraticModels
+using ADNLPModels, DifferentialEquations, LinearOperators, ManualNLPModels, MLDatasets, NLPModels, NLPModelsModifiers
+using NLPModelsTest, QuadraticModels
 using RegularizedProblems
 
 function test_well_defined(model, nls_model, sol)
@@ -59,6 +60,7 @@ end
   @test all(nls_model.meta.uvar .== Inf)
 end
 
+"""
 @testset "FH" begin
   model, nls_model, sol = fh_model()
   test_objectives(model, nls_model)
@@ -72,6 +74,7 @@ end
   @test nls_model.nls_meta.nequ == 202
   @test all(nls_model.meta.x0 .== 1)
 end
+"""
 
 @testset "low-rank completion" begin
   model, nls_model, A = lrcomp_model()
@@ -91,6 +94,24 @@ end
   @test all(0 .<= model.meta.x0 .<= 1)
   @test nls_model.nls_meta.nequ == 10000
   @test all(0 .<= nls_model.meta.x0 .<= 1)
+
+  # Equality-constrained random matrix completion model in forward mode
+
+  xs, B, ω = mat_rand(100, 100, 5, 0.8, 0.0, 0.0, 0.0)
+  model, sol = random_matrix_completion_eq_model(xs, B, ω, mode = :forward)
+
+  # Test basics
+  @test model.meta.nvar == 100*100
+  @test model.meta.ncon > 0
+  @test model.meta.ncon < 100*100
+  @test cons(model, sol) ≈ 0
+
+  # Construct ADModel to compare with ManualNLPModels model
+  f(x) = zero(eltype(x))
+  c(x) = x[ω] - B
+  ad_model = ADNLPModel(f, model.meta.x0, c, zero(B), zero(B))
+  consistent_nlps([model, ad_model], exclude = [hess, hess_coord, jth_hess, jth_hess_coord, jth_hprod, ghjvprod, jth_hprod], test_derivative = false)
+
 end
 
 @testset "MIT" begin
