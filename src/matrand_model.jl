@@ -124,17 +124,17 @@ end
 
 Return an instance of an `NLPModel` representing the equality-constrained 
 matrix completion problem in forward mode, i.e., the linear constraint
-```math
-   X_{ij} = A_{ij} \ \forall i,j \in E,
-```
-where $$ E \subseteq \mathbb{R}^m \times \mathbb{R}^n $$.
+
+$$ X_{ij} = A_{ij} \ \forall i,j \in E, $$
+
+where $ E \subseteq \mathbb{R}^m \times \mathbb{R}^n $.
 Alternatively, one can also represent the equality-constrained 
 matrix completion problem in backward mode, i.e, the optimization problem
-```math
-   \min_{\sigma, U, V} 0 \quad \text{s.t.} \ U^T U = I, \ V^T V = I, \ \sum_k \sigma_k u_k^i v_k^j = A_{ij}.
-```
-where $$ \sigma \in \mathbb{R}^l$$, $$ U \in \mathbb{R}^m \times \mathbb{R}^l $$ and 
-$$ V \in \mathbb{R}^l \times \mathbb{R}^n $$ with $$ l \coloneqq \min\{m, n\} $$.
+
+$$ \min_{\sigma, U, V} 0 \quad \text{s.t.} \ U^T U = I, \ V^T V = I, \ \sum_k \sigma_k u_k^i v_k^j = A_{ij}.$$
+
+where $ \sigma \in \mathbb{R}^l $, $ U \in \mathbb{R}^m \times \mathbb{R}^l $ and 
+$ V \in \mathbb{R}^l \times \mathbb{R}^n $ with $ l \coloneqq \min\{m, n\} $.
 
 ## Keyword Arguments
 
