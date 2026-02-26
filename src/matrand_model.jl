@@ -119,12 +119,42 @@ function MIT_matrix_completion_model()
   matrix_completion_model(X, B, ω)
 end
 
-function random_matrix_completion_eq_model(
+"""
+    model, sol = random_matrix_completion_eq_model(; kwargs...)
+
+Return an instance of an `NLPModel` representing the equality-constrained 
+matrix completion problem in forward mode, i.e., the linear constraint
+```math
+   X_{ij} = A_{ij} \ \forall i,j \in E,
+```
+where $$ E \subseteq \mathbb{R}^m \times \mathbb{R}^n $$.
+Alternatively, one can also represent the equality-constrained 
+matrix completion problem in backward mode, i.e, the optimization problem
+```math
+   \min_{\sigma, U, V} 0 \quad \text{s.t.} \ U^T U = I, \ V^T V = I, \ \sum_k \sigma_k u_k^i v_k^j = A_{ij}.
+```
+where $$ \sigma \in \mathbb{R}^l$$, $$ U \in \mathbb{R}^m \times \mathbb{R}^l $$ and 
+$$ V \in \mathbb{R}^l \times \mathbb{R}^n $$ with $$ l \coloneqq \min\{m, n\} $$.
+
+## Keyword Arguments
+
+* `m :: Int = 100`: the number of rows of X and A;
+* `n :: Int = 100`: the number of columns of X and A;
+* `r :: Int = 5`: the desired rank of A;
+* `sr :: Float64 = 0.8`: a threshold between 0 and 1 used to determine the set of pixels retained by the operator P;
+* `mode :: Symbol = :forward`: either `:forward` or `:backward`, represents which form of the equality constrained matrix completion problem is to be represented (see above).
+
+## Return Value
+
+n instance of an `NLPModel` representing the
+equality constrained matrix completion problem, and the exact solution.
+"""
+function random_matrix_completion_eq_model(;
   m::Int = 100,
   n::Int = 100,
   r::Int = 5,
   sr::Float64 = 0.8,
-  mode = :forward
+  mode::Symbol = :forward
 )
   xs, B, ω = mat_rand(m, n, r, sr, 0.0, 0.0, 0.0)
   xs = collect(vec(xs))
