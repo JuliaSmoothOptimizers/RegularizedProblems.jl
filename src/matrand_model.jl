@@ -1,4 +1,4 @@
-export random_matrix_completion_model, random_matrix_completion_eq_model, MIT_matrix_completion_model
+export mat_rand, random_matrix_completion_model, random_matrix_completion_eq_model, MIT_matrix_completion_model
 
 function mat_rand(m::Int, n::Int, r::Int, sr::Float64, va::Float64, vb::Float64, c::Float64)
   xl = rand(Uniform(-0.1, 0.3), m, r)
@@ -157,6 +157,12 @@ function random_matrix_completion_eq_model(;
   mode::Symbol = :forward
 )
   xs, B, ω = mat_rand(m, n, r, sr, 0.0, 0.0, 0.0)
+  return random_matrix_completion_eq_model(xs, B, ω, mode = mode)
+end
+
+function random_matrix_completion_eq_model(xs, B, ω; mode = forward)
+
+  m, n = size(xs)
   xs = collect(vec(xs))
 
   # Constrained API
