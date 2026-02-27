@@ -1,5 +1,6 @@
 using LinearAlgebra, Test
-using ADNLPModels, DifferentialEquations, LinearOperators, ManualNLPModels, MLDatasets, NLPModels, NLPModelsModifiers, QuadraticModels
+using ADNLPModels, DifferentialEquations, LinearOperators, ManualNLPModels, MLDatasets, NLPModels, NLPModelsModifiers
+using NLPModelsTest, QuadraticModels
 using RegularizedProblems
 
 function test_well_defined(model, nls_model, sol)
@@ -21,6 +22,33 @@ function test_objectives(model, nls_model, x = model.meta.x0)
 
   JF = jprod_residual(nls_model, x, x)
   @test JF' * F ≈ JtF' * x
+end
+
+@testset "BP" begin
+
+  # Unbounded basis pursuit model
+  A, b, x0 = bp_data()
+  model, sol = bp_model(A, b, x0)
+
+  # Test basics
+  @test model.meta.nvar == 512
+  @test model.meta.ncon == 200
+  @test Int(norm(x0, 0)) == 10
+  @test A*x0 ≈ b
+
+  # Construct ADModel to compare with ManualNLPModels model
+  f(x) = zero(eltype(x))
+  c(x) = A*x - b
+  ad_model = ADNLPModel(f, model.meta.x0, c, zero(b), zero(b))
+  consistent_nlps([model, ad_model], exclude = [hess, hess_coord, jth_hess, jth_hess_coord, jth_hprod, ghjvprod, jth_hprod], test_derivative = false)
+
+  # Bounded basis pursuit model
+  A, b, x0 = bp_data(bounds = true)
+  model, sol = bp_model(A, b, x0, bounds = true)
+  
+  # Construct ADModel to compare with ManualNLPModels model
+  ad_model = ADNLPModel(f, model.meta.x0, zero(x0), Inf*ones(eltype(x0), length(x0)), c, zero(b), zero(b))
+  consistent_nlps([model, ad_model], exclude = [hess, hess_coord, jth_hess, jth_hess_coord, jth_hprod, ghjvprod, jth_hprod], test_derivative = false)
 end
 
 @testset "BPDN" begin
