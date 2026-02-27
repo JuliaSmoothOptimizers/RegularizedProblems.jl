@@ -82,12 +82,12 @@ function bp_model(A::AbstractMatrix{T}, b::AbstractVector{T}, x0::AbstractVector
     mul!(jtv, A', v)
   end
 
-  function hprod!(hv, x, y, v; obj_weight = one(T))
-    return hv .= zero(T)
+  function hprod!(hv, x, y, v; obj_weight = one(eltype(x)))
+    return hv .= zero(eltype(x))
   end
 
-  function hess_coord!(vals, x, y; obj_weight = one(T))
-    return zeros(T, 0)
+  function hess_coord!(vals, x, y; obj_weight = one(eltype(x)))
+    return zeros(eltype(x), 0)
   end
 
   rows_jac = repeat(1:m, outer = n)
@@ -106,19 +106,19 @@ function bp_model(A::AbstractMatrix{T}, b::AbstractVector{T}, x0::AbstractVector
 
   # Unconstrained API
   function obj(x)
-    return zero(T)
+    return zero(eltype(x))
   end
 
   function grad!(g, x)
-    g .= zero(T)
+    g .= 0
   end
 
-  function hprod!(hv, x, v; obj_weight = one(T))
-    return hv .= zero(T)
+  function hprod!(hv, x, v; obj_weight = one(eltype(x)))
+    return hv .= zero(eltype(x))
   end
 
-  function hess_coord!(vals, x; obj_weight = one(T))
-    return zeros(T, 0)
+  function hess_coord!(vals, x; obj_weight = one(eltype(x)))
+    return zeros(eltype(x), 0)
   end
 
   nlp = NLPModel(
