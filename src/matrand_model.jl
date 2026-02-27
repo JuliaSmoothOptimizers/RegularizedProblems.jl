@@ -6,7 +6,7 @@ function mat_rand(m::Int, n::Int, r::Int, sr::Float64, va::Float64, vb::Float64,
   xs = xl * xr'
   Ω = findall(<(sr), rand(m, n))
   B = xs[Ω]
-  B = (1 - c) * add_gauss(B, va, 0; clip = true) + c * add_gauss(B, vb, 0; clip = true)
+  B = (1 - c) * add_gauss(B, va, 0; clip = false) + c * add_gauss(B, vb, 0; clip = false)
   ω = zeros(Int64, size(Ω, 1))   # Vectorize Omega
   for i = 1:size(Ω, 1)
     ω[i] = Ω[i][1] + n * (Ω[i][2] - 1)
@@ -160,13 +160,18 @@ function random_matrix_completion_eq_model(;
   return random_matrix_completion_eq_model(xs, B, ω, mode = mode)
 end
 
-function random_matrix_completion_eq_model(xs, B, ω; mode = forward)
+function random_matrix_completion_eq_model(xs, B, ω; mode = :foward)
+  nlp, x0 = mode == :forward ? random_matrix_completion_eq_model_forward(xs, B, ω) :
+    random_matrix_completion_eq_model_backward(xs, B, ω)
+end
+
+function random_matrix_completion_eq_model_forward(xs, B, ω)
 
   m, n = size(xs)
   xs = collect(vec(xs))
 
   # Constrained API
-  function c!(cx, x)
+  function cons!(cx, x)
     @views cx .= x[ω] .- B
   end
 
@@ -225,5 +230,60 @@ function random_matrix_completion_eq_model(xs, B, ω; mode = forward)
 
   return nlp, xs
 
+end
+
+function random_matrix_completion_eq_model_backward(xs, B, ω)
+  m, n = size(xs)
+  l = min(m, n)
+  xs_svd = svd(xs)
+  xs = collect(vcat(vec(xs_svd.U), xs_svd.S, vec(xs_svd.Vt)))
+
+  # Constrained API
+  function c!(cx, x)
+    U = @views reshape(x[1:m*l], m, l)
+    σ = @views x[m*l + 1 : m*l + l]
+    V = @views reshape(x[m*l + l + 1:end], n, l)
+
+    n_entries_l = Int(l*(l+1)/2)
+
+    @inbounds for i = 1:l
+      @inbounds for j = 1:i
+        cx_idx = Int(j + i*(i-1)/2)
+        if i == j
+          @views cx[cx_idx] = dot(U[:, i], U[:, j]) - 1
+          @views cx[n_entries_l + cx_idx] = dot(V[i, :], V[j, :]) - 1
+        else
+          @views cx[cx_idx] = dot(U[:, i], U[:, j])
+          @views cx[n_entries_l + cx_idx] = dot(V[i, :], V[j, :])
+        end
+      end
+    end
+
+    offset = 2*n_entries_l
+    @inbounds for i in eachindex(ω)
+      i_idx = mod(ω[i], n)
+      i_idx = i_idx == 0 ? n : i_idx
+      j_idx = Int((ω[i] - i_idx)/n) + 1
+      cx[offset + i] = - B[i]
+      @inbounds for j = 1:l
+        cx[offset + i] += σ[j]*U[i_idx, j]*V[j, j_idx]
+      end
+    end    
+  end
+
+
+  # Unconstrained API
+  function obj(x)
+    return 0.0
+  end
+  x0 = zeros(Float64, m*l + n*l + l)
+  ncon = l*(l+1) + length(B)
+  return ADNLPModel!(
+    obj,
+    x0,
+    c!,
+    zeros(ncon),
+    zeros(ncon)
+  ), xs
 end
 
