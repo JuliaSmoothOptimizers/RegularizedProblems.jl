@@ -160,7 +160,7 @@ function random_matrix_completion_eq_model(;
   return random_matrix_completion_eq_model(xs, B, ω, mode = mode)
 end
 
-function random_matrix_completion_eq_model(xs, B, ω; mode = :foward)
+function random_matrix_completion_eq_model(xs, B, ω; mode = :forward)
   nlp, x0 = mode == :forward ? random_matrix_completion_eq_model_forward(xs, B, ω) :
     random_matrix_completion_eq_model_backward(xs, B, ω)
 end
