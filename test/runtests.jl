@@ -104,7 +104,7 @@ end
   @test model.meta.nvar == 100*100
   @test model.meta.ncon > 0
   @test model.meta.ncon < 100*100
-  @test cons(model, sol) ≈ 0
+  @test cons(model, sol) .≈ 0
 
   # Construct ADModel to compare with ManualNLPModels model
   f(x) = zero(eltype(x))
