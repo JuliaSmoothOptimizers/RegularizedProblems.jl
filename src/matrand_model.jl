@@ -278,7 +278,7 @@ function random_matrix_completion_eq_model_backward(xs, B, ω)
   end
   x0 = zeros(Float64, m*l + n*l + l)
   ncon = l*(l+1) + length(B)
-  return ADNLPModel!(
+  return ADNLPModels.ADNLPModel!(
     obj,
     x0,
     c!,
