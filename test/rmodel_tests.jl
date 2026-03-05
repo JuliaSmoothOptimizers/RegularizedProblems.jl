@@ -20,7 +20,7 @@ using ProximalOperators
   B_init = Matrix(hess_op(rmodel_lbfgs, model.meta.x0))
   push!(rmodel_lbfgs.model, model.meta.x0, grad(model, model.meta.x0))
   reset!(rmodel_lbfgs)
-  @test hess_op(rmodel_lbfgs, model.meta.x0) == B_init
+  @test Matrix(hess_op(rmodel_lbfgs, model.meta.x0)) == B_init
   @test neval_grad(rmodel_lbfgs) == 0
 
 end
