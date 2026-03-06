@@ -22,7 +22,6 @@ using ProximalOperators
   reset!(rmodel_lbfgs)
   @test Matrix(hess_op(rmodel_lbfgs, model.meta.x0)) == B_init
   @test neval_grad(rmodel_lbfgs) == 0
-
 end
 
 @testset "Problem combos" begin
