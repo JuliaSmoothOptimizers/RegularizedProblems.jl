@@ -99,6 +99,10 @@ for counter in fieldnames(NLSCounters)
   @eval NLPModels.$counter(rnls::RegularizedNLSModel) = NLPModels.$counter(rnls.model)
 end
 
+function NLPModels.reset!(rnlp::AbstractRegularizedNLPModel)
+  reset!(rnlp.model)
+end
+
 # simple show method for now
 function Base.show(io::IO, rnlp::AbstractRegularizedNLPModel)
   print(io, "Smooth model: ")
