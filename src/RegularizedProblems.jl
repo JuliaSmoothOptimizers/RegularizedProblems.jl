@@ -5,6 +5,8 @@ using Random, Requires
 using ManualNLPModels, NLPModels
 using Distributions, Noise
 
+println("Trigger Breakage")
+
 include("utils.jl")
 include("types.jl")
 include("bpdn_model.jl")
