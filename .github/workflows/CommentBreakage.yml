@@ -28,13 +28,11 @@ jobs:
       - name: Generate summary
         run: |
           cd breakage
-
           echo "| Package name | latest | stable |" > summary.md
           echo "|--|--|--|" >> summary.md
           count=0
-          for dir in breakage-*
+          for file in breakage-*
           do
-            file=$dir/$(ls "$dir")
             if [ $count == "0" ]; then
               name=$(echo $file | cut -f2 -d-)
               echo -n "| $name | "
