@@ -122,39 +122,3 @@ jobs:
         with:
           name: breakage-${{ matrix.pkg }}-${{ matrix.pkgversion }}
           path: breakage/breakage-*
-
-  upload:
-    needs: break
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/download-artifact@v4
-        with:
-          path: breakage
-          pattern: breakage-*
-          merge-multiple: true
-
-      - run: ls -R
-      - run: |
-          cd breakage
-          echo "| Package name | latest | stable |" > summary.md
-          echo "|--|--|--|" >> summary.md
-          count=0
-          for file in breakage-*
-          do
-            if [ $count == "0" ]; then
-              name=$(echo $file | cut -f2 -d-)
-              echo -n "| $name | "
-            else
-              echo -n "| "
-            fi
-            cat $file
-            if [ $count == "0" ]; then
-              echo -n " "
-              count=1
-            else
-              echo " |"
-              count=0
-            fi
-          done >> summary.md
