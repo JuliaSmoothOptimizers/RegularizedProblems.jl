@@ -1,0 +1,12 @@
+name: Comment Breakage
+
+on:
+  workflow_run:
+    workflows: ["Breakage"]
+    types: [completed]
+
+jobs:
+  placeholder:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Placeholder workflow"
