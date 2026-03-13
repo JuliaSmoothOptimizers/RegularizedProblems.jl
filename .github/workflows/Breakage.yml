@@ -158,8 +158,3 @@ jobs:
               count=0
             fi
           done >> summary.md
-
-      - name: PR comment with file
-        uses: thollander/actions-comment-pull-request@v2
-        with:
-          filePath: breakage/summary.md
