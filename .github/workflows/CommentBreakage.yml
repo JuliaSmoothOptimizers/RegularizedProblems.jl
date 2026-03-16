@@ -13,6 +13,23 @@ jobs:
       github.event.workflow_run.event == 'pull_request' &&
       github.event.workflow_run.conclusion == 'success'
     steps:
+      - name: Download PR number artifact
+        uses: dawidd6/action-download-artifact@v17
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          workflow: Breakage
+          run_id: ${{ github.event.workflow_run.id }}
+          name: pr-number
+          path: pr-number
+          use_unzip: true
+
+      - name: Read PR number
+        id: read_pr
+        run: |
+          PR_NUMBER=$(cat pr-number/pr-number.txt)
+          echo "PR_NUMBER=$PR_NUMBER" >> "$GITHUB_ENV"
+          echo "pr_number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+
       - name: Download breakage artifacts
         uses: dawidd6/action-download-artifact@v17
         with:
@@ -53,4 +70,4 @@ jobs:
         uses: thollander/actions-comment-pull-request@v2
         with:
           filePath: breakage/summary.md
-          pr_number: ${{ github.event.workflow_run.pull_requests[0].number }}
+          pr_number: ${{ steps.read_pr.outputs.pr_number }}
