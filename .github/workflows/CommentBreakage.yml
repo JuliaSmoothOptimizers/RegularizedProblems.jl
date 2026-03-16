@@ -14,7 +14,7 @@ jobs:
       github.event.workflow_run.conclusion == 'success'
     steps:
       - name: Download PR number artifact
-        uses: dawidd6/action-download-artifact@v3
+        uses: dawidd6/action-download-artifact@v17
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           workflow: Breakage
@@ -27,7 +27,7 @@ jobs:
         id: read_pr
         run: |
           PR_NUMBER=$(cat pr-number/pr-number.txt)
-          echo "PR_NUMBER=$PR_NUMBER" >> $GITHUB_ENV
+          echo "PR_NUMBER=$PR_NUMBER" >> "$GITHUB_ENV"
           echo "pr_number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
 
       - name: Download breakage artifacts
