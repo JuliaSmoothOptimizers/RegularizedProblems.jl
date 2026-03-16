@@ -122,3 +122,17 @@ jobs:
         with:
           name: breakage-${{ matrix.pkg }}-${{ matrix.pkgversion }}
           path: breakage/breakage-*
+
+  upload_pr_number:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Write PR number
+        run: |
+          mkdir -p breakage-pr-number
+          echo "${{ github.event.pull_request.number }}" > breakage-pr-number/pr-number.txt
+
+      - name: Upload PR number artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-number
+          path: breakage-pr-number/pr-number.txt
