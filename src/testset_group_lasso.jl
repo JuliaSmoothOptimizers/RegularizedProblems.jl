@@ -2,7 +2,7 @@
 export setup_group_lasso_l12
 
 function setup_group_lasso_l12(args...; kwargs...)
-  model, nls_model, ng, _, idx = group_lasso_model(; kwargs...)
+  model, nls_model, _, ng, _, idx = group_lasso_model(; kwargs...)
   idx = [idx[i, :] for i = 1:ng]
   λ = 0.2 * ones(ng)
   h = ShiftedProximalOperators.GroupNormL2(λ, idx)
