@@ -105,9 +105,7 @@ function ShiftedProximalOperators.shift!(
   g = φ.data.c
   compute_grad && grad!(nlp, x, g)
 
-  if NLPModels.has_hess(nlp)
-    φ.data.H = NLPModels.hess_op(nlp, x)
-  end
+  φ.data.H = hess_op(nlp, x)
 end
 
 function NLPModels.obj(reg_nlp::AbstractShiftedProximableNLPModel, s::AbstractVector; skip_sigma::Bool = false, cauchy::Bool = false)
