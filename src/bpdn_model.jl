@@ -81,8 +81,9 @@ function bpdn_model(args...; bounds::Bool = false)
     g
   end
 
-  nlpmeta_args, nlpmodel_kwargs = Dict{Symbol, Any}(:name => (bounds ? "BPDNpos" : "BPDN"),), Dict{Symbol, Any}()
-  nlsmodel_kwargs = Dict{Symbol, Any}(:name => (bounds ? "BPDN-LS_pos" : "BPDN-LS"),)
+  nlpmeta_args, nlpmodel_kwargs =
+    Dict{Symbol, Any}(:name => (bounds ? "BPDNpos" : "BPDN")), Dict{Symbol, Any}()
+  nlsmodel_kwargs = Dict{Symbol, Any}(:name => (bounds ? "BPDN-LS_pos" : "BPDN-LS"))
   if bounds
     nlpmodel_kwargs[:lvar] = zero(x0)
     nlpmodel_kwargs[:uvar] = fill!(similar(x0), Inf)
@@ -92,6 +93,13 @@ function bpdn_model(args...; bounds::Bool = false)
   end
 
   NLPModel(zero(x0), obj, grad = grad!, meta_args = nlpmeta_args; nlpmodel_kwargs...),
-  NLSModel(zero(x0), resid!, size(A, 1), jprod = jprod_resid!, jtprod = jtprod_resid!; nlsmodel_kwargs...),
+  NLSModel(
+    zero(x0),
+    resid!,
+    size(A, 1),
+    jprod = jprod_resid!,
+    jtprod = jtprod_resid!;
+    nlsmodel_kwargs...,
+  ),
   x0
 end
