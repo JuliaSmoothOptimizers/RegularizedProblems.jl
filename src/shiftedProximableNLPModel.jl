@@ -35,6 +35,12 @@ The ShiftedProximableQuadraticNLPModel is made of the following components:
 
 The matrix B is constructed as a `LinearOperator` and is the returned value of `hess_op(reg_nlp, x)` (see https://jso.dev/NLPModels.jl/stable/reference/#NLPModels.hess_op).
 φ is constructed as a `QuadraticModel`, (see https://github.com/JuliaSmoothOptimizers/QuadraticModels.jl).
+
+# NLPModels Interface
+The `ShiftedProximableQuadraticNLPModel` implements the `obj` function from the `NLPModels` interface, which evaluates the objective function φ(s; x) + ½ σ ‖s‖² + ψ(s; x) at a given point s.
+The `obj` function has two additional optional keyword arguments: `skip_sigma` (default: false) and `cauchy` (default: false). 
+If `skip_sigma` is true, the term ½ σ ‖s‖² is not included in the evaluation of the objective.
+If `cauchy` is true, the term `B` is not included in the evaluation of the objective.
 """
 mutable struct ShiftedProximableQuadraticNLPModel{T, V, M <: AbstractNLPModel{T, V}, H <: ShiftedProximalOperators.ShiftedProximableFunction, I, P <: AbstractRegularizedNLPModel{T, V}} <:
        AbstractShiftedProximableNLPModel{T, V}
