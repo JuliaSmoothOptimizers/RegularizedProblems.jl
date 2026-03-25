@@ -19,7 +19,7 @@ where φ(s ; x) = f(x) + ∇f(x)ᵀs + ½ sᵀBs is a quadratic approximation of
 
 The ShiftedProximableQuadraticNLPModel is made of the following components:
 
-- `model <: AbstractNLPModel`: represents φ + ½ σ ‖s‖², the quadratic approximation of the smooth part of the objective function;
+- `model <: AbstractNLPModel`: represents φ + ½ σ ‖s‖², the quadratic approximation of the smooth part of the objective function (up to the constant term f(x));
 - `h <: ShiftedProximableFunction`: represents ψ, the shifted version of the nonsmooth part of the model;
 - `selected`: the subset of variables to which the regularizer h should be applied (default: all).
 - `parent`: the original regularized NLP model from which the subproblem was derived.
@@ -33,7 +33,7 @@ The ShiftedProximableQuadraticNLPModel is made of the following components:
 - `u_bound_m_x::VN = nothing`: the vector of upper bounds minus `x` (i.e., u - x), required if the original NLP model has bounds.
 - `∇f::VNG = nothing`: the gradient of the smooth part of the objective function at `x`. If not provided, it will be computed.
 
-The matrix B is constructed as a `LinearOperator` and is the returned value of `hess_op(reg_nlp, x)` (see https://jso.dev/NLPModels.jl/stable/reference/#NLPModels.hess_op`).
+The matrix B is constructed as a `LinearOperator` and is the returned value of `hess_op(reg_nlp, x)` (see https://jso.dev/NLPModels.jl/stable/reference/#NLPModels.hess_op).
 φ is constructed as a `QuadraticModel`, (see https://github.com/JuliaSmoothOptimizers/QuadraticModels.jl).
 """
 mutable struct ShiftedProximableQuadraticNLPModel{T, V, M <: AbstractNLPModel{T, V}, H <: ShiftedProximalOperators.ShiftedProximableFunction, I, P <: AbstractRegularizedNLPModel{T, V}} <:
@@ -105,7 +105,9 @@ function ShiftedProximalOperators.shift!(
   g = φ.data.c
   compute_grad && grad!(nlp, x, g)
 
-  # The hessian is implicitly updated since it was defined as hess_op(nlp, x)
+  if NLPModels.has_hess(nlp)
+    φ.data.H = NLPModels.hess_op(nlp, x)
+  end
 end
 
 function NLPModels.obj(reg_nlp::AbstractShiftedProximableNLPModel, s::AbstractVector; skip_sigma::Bool = false, cauchy::Bool = false)

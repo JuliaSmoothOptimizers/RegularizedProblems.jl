@@ -6,7 +6,8 @@ using ADNLPModels,
   MLDatasets,
   NLPModels,
   NLPModelsModifiers,
-  QuadraticModels
+  QuadraticModels,
+  ShiftedProximalOperators,
 using RegularizedProblems
 
 function test_well_defined(model, nls_model, sol)
