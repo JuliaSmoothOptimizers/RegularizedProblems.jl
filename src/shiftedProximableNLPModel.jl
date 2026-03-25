@@ -36,7 +36,7 @@ The ShiftedProximableQuadraticNLPModel is made of the following components:
 The matrix B is constructed as a `LinearOperator` and is the returned value of `hess_op(reg_nlp, x)` (see https://jso.dev/NLPModels.jl/stable/reference/#NLPModels.hess_op`).
 φ is constructed as a `QuadraticModel`, (see https://github.com/JuliaSmoothOptimizers/QuadraticModels.jl).
 """
-struct ShiftedProximableQuadraticNLPModel{T, V, M <: AbstractNLPModel{T, V}, H <: ShiftedProximalOperators.ShiftedProximableFunction, I, P <: AbstractRegularizedNLPModel{T, V}} <:
+mutable struct ShiftedProximableQuadraticNLPModel{T, V, M <: AbstractNLPModel{T, V}, H <: ShiftedProximalOperators.ShiftedProximableFunction, I, P <: AbstractRegularizedNLPModel{T, V}} <:
        AbstractShiftedProximableNLPModel{T, V}
   model::M
   h::H
