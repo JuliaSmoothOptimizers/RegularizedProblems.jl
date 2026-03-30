@@ -42,37 +42,40 @@ The `obj` function has two additional optional keyword arguments: `skip_sigma` (
 If `skip_sigma` is true, the term ½ σ ‖s‖² is not included in the evaluation of the objective.
 If `cauchy` is true, the term `B` is not included in the evaluation of the objective.
 """
-mutable struct ShiftedProximableQuadraticNLPModel{T, V, M <: AbstractNLPModel{T, V}, H <: ShiftedProximalOperators.ShiftedProximableFunction, I, P <: AbstractRegularizedNLPModel{T, V}} <:
+mutable struct ShiftedProximableQuadraticNLPModel{T, V, M <: AbstractNLPModel{T, V}, H <: ShiftedProximalOperators.ShiftedProximableFunction, I, X, P <: AbstractRegularizedNLPModel{T, V}} <:
        AbstractShiftedProximableNLPModel{T, V}
   model::M
   h::H
   selected::I
+  χ::X
+  Δ::T
   parent::P
 end
 
 function ShiftedProximableQuadraticNLPModel(
   reg_nlp::AbstractRegularizedNLPModel{T, V}, 
   x::V;
-  l_bound_m_x::VN = nothing,
-  u_bound_m_x::VN = nothing,
-  ∇f::VNG = nothing,
-) where {T, V, VN <: Union{V, Nothing}, VNG <: Union{V, Nothing}}
+  ∇f::VN = nothing,
+  χ::X = nothing
+) where {T, V, VN <: Union{V, Nothing}, X}
   nlp, h, selected = reg_nlp.model, reg_nlp.h, reg_nlp.selected
 
-  if (has_bounds(nlp) && isnothing(l_bound_m_x) && isnothing(u_bound_m_x)) 
-    l_bound_m_x, u_bound_m_x = copy(nlp.meta.lvar), copy(nlp.meta.uvar)
-    l_bound_m_x .-= x
-    u_bound_m_x .-= x
-  end
-
-  # FIXME: `shifted` call ignores the `selected` argument when there are no bounds!
-  ψ = has_bounds(nlp) ? ShiftedProximalOperators.shifted(h, x, l_bound_m_x, u_bound_m_x, selected) : ShiftedProximalOperators.shifted(h, x)
-
+  # φ(s) + ½ σ ‖s‖²
   B = hess_op(reg_nlp, x)
   isnothing(∇f) && (∇f = grad(nlp, x))
   φ = QuadraticModel(∇f, B, x0 = x, regularize = true)
 
-  ShiftedProximableQuadraticNLPModel(φ, ψ, selected, reg_nlp)
+  l_bound_m_x, u_bound_m_x = φ.meta.lvar, φ.meta.uvar
+
+  # ψ(s)
+  # FIXME: `shifted` call ignores the `selected` argument when there are no bounds!
+  ψ = has_bounds(nlp) ? 
+    ShiftedProximalOperators.shifted(h, x, l_bound_m_x, u_bound_m_x, selected) :
+    isnothing(χ) ?
+      ShiftedProximalOperators.shifted(h, x) :
+      ShiftedProximalOperators.shifted(h, x, T(Inf), χ)
+    
+  ShiftedProximableQuadraticNLPModel(φ, ψ, selected, χ, T(Inf), reg_nlp)
 end
 
 """
@@ -103,9 +106,11 @@ function ShiftedProximalOperators.shift!(
   φ, ψ = reg_nlp.model, reg_nlp.h
 
   if has_bounds(nlp)
-    @. ψ.l = nlp.meta.lvar - x
-    @. ψ.u = nlp.meta.uvar - x
+    @. φ.meta.lvar = nlp.meta.lvar - x
+    @. φ.meta.uvar = nlp.meta.uvar - x
+    ShiftedProximalOperators.set_radius!(reg_nlp, reg_nlp.Δ)
   end
+
   ShiftedProximalOperators.shift!(ψ, x)
 
   g = φ.data.c
@@ -140,6 +145,31 @@ function update_sigma!(
 ) where {T, V}
   φ = reg_nlp.model
   φ.data.σ = σ
+end
+
+function ShiftedProximalOperators.set_radius!(
+  reg_nlp::ShiftedProximableQuadraticNLPModel{T, V},
+  Δ::T
+) where {T, V}
+  φ, ψ = reg_nlp.model, reg_nlp.h
+
+  # Update Radius
+  reg_nlp.Δ = Δ
+
+  # Update Lower bounds
+  if isa(ψ.l, Real)
+    ψ.l = -Δ
+  elseif isa(ψ.l, AbstractVector)
+    @. ψ.l = max(φ.meta.lvar, -Δ)
+  end
+
+  # Update Upper bounds
+  if isa(ψ.u, Real)
+    ψ.u = Δ
+  elseif isa(ψ.u, AbstractVector)
+    @. ψ.u = min(φ.meta.uvar, Δ)
+  end
+
 end
 
 # Forward meta getters so they grab info from the smooth model
