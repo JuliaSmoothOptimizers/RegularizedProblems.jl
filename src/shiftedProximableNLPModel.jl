@@ -8,20 +8,25 @@ abstract type AbstractShiftedProximableNLPModel{T, V} <: AbstractRegularizedNLPM
 
 Given a regularized NLP model `reg_nlp` representing the problem
 
-    minimize f(x) + h(x),
+    minimize f(x) + h(x)  subject to l ≤ x ≤ u,
   
 construct a shifted quadratic model around `x`:
 
-    minimize  φ(s; x) + ½ σ ‖s‖² + ψ(s; x),
+    minimize  φ(s; x) + ½ σ ‖s‖² + ψ(s; x) + χ(s; [l - x, u - x] ∩ ΔB )
 
 where φ(s ; x) = f(x) + ∇f(x)ᵀs + ½ sᵀBs is a quadratic approximation of f about x,
-ψ(s; x) is either h(x + s) or an approximation of h(x + s), ‖⋅‖ is the ℓ₂ norm and σ > 0 is the regularization parameter.
+ψ(s; x) is either h(x + s) or an approximation of h(x + s),
+‖⋅‖ is the ℓ₂ norm and σ > 0 is the regularization parameter,
+χ(s; [l - x, u - x] ∩ ΔB ) is an indicator function over the intersection of the box [l - x, u - x] and the ball ΔB of radius Δ in the infinity norm.
+In the case where there are no bounds (i.e., l = -∞ and u = +∞), the ball can be defined in any norm.
 
 The ShiftedProximableQuadraticNLPModel is made of the following components:
 
 - `model <: AbstractNLPModel`: represents φ + ½ σ ‖s‖², the quadratic approximation of the smooth part of the objective function (up to the constant term f(x));
 - `h <: ShiftedProximableFunction`: represents ψ, the shifted version of the nonsmooth part of the model;
 - `selected`: the subset of variables to which the regularizer h should be applied (default: all).
+- `χ`: the indicator function of the intersection between the box defined by the bounds and the ball defined by the trust region radius.
+- `Δ`: the trust region radius.
 - `parent`: the original regularized NLP model from which the subproblem was derived.
 
 # Arguments
@@ -29,12 +34,17 @@ The ShiftedProximableQuadraticNLPModel is made of the following components:
 - `x::V`: the point around which the quadratic model is constructed.
 
 # Keyword Arguments
-- `l_bound_m_x::VN = nothing`: the vector of lower bounds minus `x` (i.e., l - x), required if the original NLP model has bounds.
-- `u_bound_m_x::VN = nothing`: the vector of upper bounds minus `x` (i.e., u - x), required if the original NLP model has bounds.
 - `∇f::VNG = nothing`: the gradient of the smooth part of the objective function at `x`. If not provided, it will be computed.
+- `indicator_type::Symbol = :none`: the type of indicator function to use for χ. It can be one of `:box`, `:ball`, or `:none`. 
+  - If `:box`, χ is the indicator function over a box.
+  - If `:ball`, χ is the indicator function over a ball.
+  - If `:none`, χ is not included in the model.
+- `tr_norm = NormLinf(T(1))`: the norm to use for the trust region when `indicator_type` is `:ball`. When `indicator_type` is `:box` or `:none`, this argument is ignored.
+- `Δ::T = T(Inf)`: the radius of the trust region. When `indicator_type` is `:none`, this argument is ignored.
 
 The matrix B is constructed as a `LinearOperator` and is the returned value of `hess_op(reg_nlp, x)` (see https://jso.dev/NLPModels.jl/stable/reference/#NLPModels.hess_op).
 φ is constructed as a `QuadraticModel`, (see https://github.com/JuliaSmoothOptimizers/QuadraticModels.jl).
+When there are bounds, the shifted bounds l-x and u-x are stored in the metadata of the quadratic model φ.
 
 # NLPModels Interface
 The `ShiftedProximableQuadraticNLPModel` implements the `obj` function from the `NLPModels` interface, which evaluates the objective function φ(s; x) + ½ σ ‖s‖² + ψ(s; x) at a given point s.
@@ -56,8 +66,12 @@ function ShiftedProximableQuadraticNLPModel(
   reg_nlp::AbstractRegularizedNLPModel{T, V}, 
   x::V;
   ∇f::VN = nothing,
-  χ::X = nothing
-) where {T, V, VN <: Union{V, Nothing}, X}
+  indicator_type::Symbol = :none,
+  tr_norm = NormLinf(T(1)),
+  Δ::T = T(Inf),
+) where {T, V, VN <: Union{V, Nothing}}
+  @assert indicator_type ∈ (:box, :ball, :none) "indicator_type must be one of :box, :ball, or :none"
+  
   nlp, h, selected = reg_nlp.model, reg_nlp.h, reg_nlp.selected
 
   # φ(s) + ½ σ ‖s‖²
@@ -65,17 +79,27 @@ function ShiftedProximableQuadraticNLPModel(
   isnothing(∇f) && (∇f = grad(nlp, x))
   φ = QuadraticModel(∇f, B, x0 = x, regularize = true)
 
+  # χ(s)
   l_bound_m_x, u_bound_m_x = φ.meta.lvar, φ.meta.uvar
+  χ = nothing
+  if indicator_type == :box
+    χ = Dict(:l => zero(l_bound_m_x), :u => zero(u_bound_m_x))
+    @. χ[:l] = max(nlp.meta.lvar - x, -Δ)
+    @. χ[:u] = min(nlp.meta.uvar - x, Δ)
+  elseif indicator_type == :ball
+    χ = tr_norm
+  end
 
-  # ψ(s)
+  # ψ(s) + χ(s)
+  # FIXME: the indicator function logic can (and should) be simplified in `ShiftedProximalOperators.jl`...
   # FIXME: `shifted` call ignores the `selected` argument when there are no bounds!
-  ψ = has_bounds(nlp) ? 
-    ShiftedProximalOperators.shifted(h, x, l_bound_m_x, u_bound_m_x, selected) :
-    isnothing(χ) ?
-      ShiftedProximalOperators.shifted(h, x) :
-      ShiftedProximalOperators.shifted(h, x, T(Inf), χ)
-    
-  ShiftedProximableQuadraticNLPModel(φ, ψ, selected, χ, T(Inf), reg_nlp)
+  ψ = indicator_type == :box ?
+    ShiftedProximalOperators.shifted(h, x, χ[:l], χ[:u], selected) :
+    indicator_type == :ball ?
+      ShiftedProximalOperators.shifted(h, x, Δ, χ) : 
+      ShiftedProximalOperators.shifted(h, x)
+      
+  ShiftedProximableQuadraticNLPModel(φ, ψ, selected, χ, Δ, reg_nlp)
 end
 
 """
@@ -103,9 +127,9 @@ function ShiftedProximalOperators.shift!(
   compute_grad::Bool = true
 ) where{T, V}
   nlp, h = reg_nlp.parent.model, reg_nlp.parent.h
-  φ, ψ = reg_nlp.model, reg_nlp.h
+  φ, ψ, χ = reg_nlp.model, reg_nlp.h, reg_nlp.χ
 
-  if has_bounds(nlp)
+  if isa(χ, Dict)
     @. φ.meta.lvar = nlp.meta.lvar - x
     @. φ.meta.uvar = nlp.meta.uvar - x
     ShiftedProximalOperators.set_radius!(reg_nlp, reg_nlp.Δ)
@@ -151,7 +175,7 @@ function ShiftedProximalOperators.set_radius!(
   reg_nlp::ShiftedProximableQuadraticNLPModel{T, V},
   Δ::T
 ) where {T, V}
-  φ, ψ = reg_nlp.model, reg_nlp.h
+  φ, ψ, χ = reg_nlp.model, reg_nlp.h, reg_nlp.χ
 
   # Update Radius
   reg_nlp.Δ = Δ
@@ -159,15 +183,15 @@ function ShiftedProximalOperators.set_radius!(
   # Update Lower bounds
   if isa(ψ.l, Real)
     ψ.l = -Δ
-  elseif isa(ψ.l, AbstractVector)
-    @. ψ.l = max(φ.meta.lvar, -Δ)
+  elseif isa(χ, Dict)
+    @. χ[:l] = max(φ.meta.lvar, -Δ)
   end
 
   # Update Upper bounds
   if isa(ψ.u, Real)
     ψ.u = Δ
-  elseif isa(ψ.u, AbstractVector)
-    @. ψ.u = min(φ.meta.uvar, Δ)
+  elseif isa(χ, Dict)
+    @. χ[:u] = min(φ.meta.uvar, Δ)
   end
 
 end
