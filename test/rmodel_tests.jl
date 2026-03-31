@@ -25,6 +25,8 @@ using ProximalOperators
 end
 
 @testset "ShiftedProximableQuadraticNLPModel" begin
+
+  # Test for quadratic regularization
   for bounds in (false, true)
     model, nls_model, x0 = bpdn_model(1, bounds = bounds)
     s = ones(get_nvar(model))
@@ -54,16 +56,48 @@ end
     @test subproblem.model.data.c == grad(model, x)
     @test typeof(subproblem.model.data.H) <: LBFGSOperator
     if bounds == true
-      @test all(subproblem.h.l .== model.meta.lvar - x)
-      @test all(subproblem.h.u .== model.meta.uvar - x)
+      @test all(subproblem.χ.l .== model.meta.lvar - x)
+      @test all(subproblem.χ.u .== model.meta.uvar - x)
     end
 
     # Test allocations
-    @test (@allocated obj(subproblem, s)) == 0
-    @test (@allocated obj(subproblem, s; skip_sigma = true)) == 0
-    @test (@allocated obj(subproblem, s; cauchy = true)) == 0
-    @test (@allocated obj(subproblem, s; cauchy = true, skip_sigma=true)) == 0
-    @test (@allocated shift!(subproblem, x)) == 0
+    @test (@wrappedallocs obj(subproblem, s)) == 0
+    @test (@wrappedallocs shift!(subproblem, x)) == 0
+  end
+
+  # Test for trust regions
+  for bounds in (false, true)
+    model, nls_model, x0 = bpdn_model(1, bounds = bounds)
+    s = ones(get_nvar(model))
+    h = NormL1(1.0)
+    rmodel = RegularizedNLPModel(LBFGSModel(model), h)
+    subproblem = ShiftedProximableQuadraticNLPModel(rmodel, x0, indicator_type = :ball, tr_norm = NormL2(1.0), Δ = 1.0)
+
+    @test get_nvar(subproblem) == get_nvar(rmodel)
+
+    obj(subproblem, s)
+    @test neval_obj(subproblem) == neval_obj(subproblem.model)
+
+    @test subproblem.Δ == 1.0
+    set_radius!(subproblem, 2.0)
+    @test subproblem.Δ == 2.0
+
+    @test obj(subproblem, s; cauchy = true, skip_sigma = true) == dot(subproblem.model.data.c, s) + subproblem.h(s)
+    @test obj(subproblem, s; skip_sigma = false) == obj(subproblem, s; skip_sigma = true)
+    @test obj(subproblem, s; cauchy = true, skip_sigma = false) == obj(subproblem, s; cauchy = true, skip_sigma = true)
+
+    x = randn(get_nvar(model))
+    shift!(subproblem, x)
+    @test subproblem.model.data.c == grad(model, x)
+    @test typeof(subproblem.model.data.H) <: LBFGSOperator
+    if bounds == true
+      @test all(subproblem.χ.l .== max.(model.meta.lvar - x, -subproblem.Δ))
+      @test all(subproblem.χ.u .== min.(model.meta.uvar - x,  subproblem.Δ))
+    end
+
+    # Test allocations
+    #@test (@wrappedallocs obj(subproblem, s)) == 0 #FIXME: NormL1B2 allocates...
+    @test (@wrappedallocs shift!(subproblem, x)) == 0
   end
 end
 

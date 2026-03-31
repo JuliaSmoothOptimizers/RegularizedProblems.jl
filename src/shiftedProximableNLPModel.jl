@@ -81,6 +81,7 @@ function ShiftedProximableQuadraticNLPModel(
 
   # χ(s)
   l_bound_m_x, u_bound_m_x = φ.meta.lvar, φ.meta.uvar
+  indicator_type = has_bounds(nlp) ? :box : indicator_type
   χ = nothing
   if indicator_type == :box
     χ = BoxIndicatorFunction(zero(l_bound_m_x), zero(u_bound_m_x))
@@ -182,7 +183,7 @@ function ShiftedProximalOperators.set_radius!(
 
   # Update Bounds if necessary
   if isa(χ, BallIndicatorFunction)
-    ψ.l, ψ.u = -Δ, Δ
+    ShiftedProximalOperators.set_radius!(ψ, Δ)
     χ.Δ = Δ
   elseif isa(χ, BoxIndicatorFunction)
     @. χ.l = max(φ.meta.lvar, -Δ)

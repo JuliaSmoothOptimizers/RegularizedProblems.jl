@@ -10,6 +10,17 @@ using ADNLPModels,
   ShiftedProximalOperators
 using RegularizedProblems
 
+macro wrappedallocs(expr)
+  argnames = [gensym() for a in expr.args]
+  quote
+    function g($(argnames...))
+      $(Expr(expr.head, argnames...))
+      @allocated $(Expr(expr.head, argnames...))
+    end
+    $(Expr(:call, :g, [esc(a) for a in expr.args]...))
+  end
+end
+
 function test_well_defined(model, nls_model, sol)
   @test typeof(model) <: NLPModel
   @test typeof(sol) == typeof(model.meta.x0)
