@@ -1,5 +1,5 @@
 export AbstractShiftedProximableNLPModel, ShiftedProximableQuadraticNLPModel
-export update_sigma!, get_sigma
+export set_sigma!, get_sigma
 
 abstract type AbstractShiftedProximableNLPModel{T, V} <: AbstractRegularizedNLPModel{T, V} end
 
@@ -149,12 +149,12 @@ function NLPModels.obj(reg_nlp::AbstractShiftedProximableNLPModel, s::AbstractVe
 
   σ_temp = get_sigma(reg_nlp)
   σ_c = skip_sigma ? zero(σ_temp) : σ_temp
-  update_sigma!(reg_nlp, σ_c)
+  set_sigma!(reg_nlp, σ_c)
 
   φs = cauchy ? dot(φ.data.c, s) + σ_c * dot(s, s)/2 : obj(φ, s)
   ψs = ψ(s)
 
-  update_sigma!(reg_nlp, σ_temp) # restore original σ
+  set_sigma!(reg_nlp, σ_temp) # restore original σ
 
   return φs + ψs
 end
@@ -164,7 +164,7 @@ function get_sigma(reg_nlp::ShiftedProximableQuadraticNLPModel{T, V}) where {T, 
   return φ.data.σ
 end
 
-function update_sigma!(
+function set_sigma!(
   reg_nlp::ShiftedProximableQuadraticNLPModel{T, V},
   σ::T
 ) where {T, V}

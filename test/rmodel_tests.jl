@@ -40,14 +40,14 @@ end
     @test neval_obj(subproblem) == neval_obj(subproblem.model)
 
     @test get_sigma(subproblem) == 0.0
-    update_sigma!(subproblem, 1.0)
+    set_sigma!(subproblem, 1.0)
     @test get_sigma(subproblem) == 1.0
 
     @test obj(subproblem, s; skip_sigma = false) == obj(subproblem, s; skip_sigma = true) + 0.5 * dot(s, s)
     @test obj(subproblem, s; cauchy = true) == dot(subproblem.model.data.c, s) + 0.5 * dot(s, s) + subproblem.h(s)
     @test obj(subproblem, s; cauchy = true, skip_sigma = true) == dot(subproblem.model.data.c, s) + subproblem.h(s)
 
-    update_sigma!(subproblem, 0.0)
+    set_sigma!(subproblem, 0.0)
     @test obj(subproblem, s; skip_sigma = false) == obj(subproblem, s; skip_sigma = true)
     @test obj(subproblem, s; cauchy = true, skip_sigma = false) == obj(subproblem, s; cauchy = true, skip_sigma = true)
 
