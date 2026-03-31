@@ -67,7 +67,7 @@ function ShiftedProximableQuadraticNLPModel(
   x::V;
   ∇f::VN = nothing,
   indicator_type::Symbol = :none,
-  tr_norm = NormLinf(T(1)),
+  tr_norm = ProximalOperators.NormLinf(T(1)),
   Δ::T = T(Inf),
 ) where {T, V, VN <: Union{V, Nothing}}
   @assert indicator_type ∈ (:box, :ball, :none) "indicator_type must be one of :box, :ball, or :none"
@@ -83,20 +83,20 @@ function ShiftedProximableQuadraticNLPModel(
   l_bound_m_x, u_bound_m_x = φ.meta.lvar, φ.meta.uvar
   χ = nothing
   if indicator_type == :box
-    χ = Dict(:l => zero(l_bound_m_x), :u => zero(u_bound_m_x))
-    @. χ[:l] = max(nlp.meta.lvar - x, -Δ)
-    @. χ[:u] = min(nlp.meta.uvar - x, Δ)
+    χ = BoxIndicatorFunction(zero(l_bound_m_x), zero(u_bound_m_x))
+    @. χ.l = max(nlp.meta.lvar - x, -Δ)
+    @. χ.u = min(nlp.meta.uvar - x, Δ)
   elseif indicator_type == :ball
-    χ = tr_norm
+    χ = BallIndicatorFunction(Δ, tr_norm)
   end
 
   # ψ(s) + χ(s)
   # FIXME: the indicator function logic can (and should) be simplified in `ShiftedProximalOperators.jl`...
   # FIXME: `shifted` call ignores the `selected` argument when there are no bounds!
   ψ = indicator_type == :box ?
-    ShiftedProximalOperators.shifted(h, x, χ[:l], χ[:u], selected) :
+    ShiftedProximalOperators.shifted(h, x, χ.l, χ.u, selected) :
     indicator_type == :ball ?
-      ShiftedProximalOperators.shifted(h, x, Δ, χ) : 
+      ShiftedProximalOperators.shifted(h, x, χ.Δ, χ.norm) : 
       ShiftedProximalOperators.shifted(h, x)
       
   ShiftedProximableQuadraticNLPModel(φ, ψ, selected, χ, Δ, reg_nlp)
@@ -129,7 +129,7 @@ function ShiftedProximalOperators.shift!(
   nlp, h = reg_nlp.parent.model, reg_nlp.parent.h
   φ, ψ, χ = reg_nlp.model, reg_nlp.h, reg_nlp.χ
 
-  if isa(χ, Dict)
+  if isa(χ, BoxIndicatorFunction)
     @. φ.meta.lvar = nlp.meta.lvar - x
     @. φ.meta.uvar = nlp.meta.uvar - x
     ShiftedProximalOperators.set_radius!(reg_nlp, reg_nlp.Δ)
@@ -180,18 +180,13 @@ function ShiftedProximalOperators.set_radius!(
   # Update Radius
   reg_nlp.Δ = Δ
 
-  # Update Lower bounds
-  if isa(ψ.l, Real)
-    ψ.l = -Δ
-  elseif isa(χ, Dict)
-    @. χ[:l] = max(φ.meta.lvar, -Δ)
-  end
-
-  # Update Upper bounds
-  if isa(ψ.u, Real)
-    ψ.u = Δ
-  elseif isa(χ, Dict)
-    @. χ[:u] = min(φ.meta.uvar, Δ)
+  # Update Bounds if necessary
+  if isa(χ, BallIndicatorFunction)
+    ψ.l, ψ.u = -Δ, Δ
+    χ.Δ = Δ
+  elseif isa(χ, BoxIndicatorFunction)
+    @. χ.l = max(φ.meta.lvar, -Δ)
+    @. χ.u = min(φ.meta.uvar, Δ)
   end
 
 end
@@ -212,5 +207,18 @@ for model_type ∈ (ShiftedProximableQuadraticNLPModel,)
   for counter in fieldnames(Counters)
     @eval NLPModels.$counter(rnlp::$model_type) = NLPModels.$counter(rnlp.model)
   end
+end
+
+# Indicator functions logic
+abstract type AbstractIndicatorFunction end
+
+mutable struct BoxIndicatorFunction{V} <: AbstractIndicatorFunction
+  l::V
+  u::V
+end
+
+mutable struct BallIndicatorFunction{T, N} <: AbstractIndicatorFunction
+  Δ::T
+  norm::N
 end
 
