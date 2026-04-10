@@ -17,6 +17,7 @@ SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [compat]
 ADNLPModels = "^0.3, 0.4, 0.7"
+DataStructures = "0.19"
 Distributions = "0.25"
 LinearOperators = "2.11.0"
 ManualNLPModels = "0.2"
