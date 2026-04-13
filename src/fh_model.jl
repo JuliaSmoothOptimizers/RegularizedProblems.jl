@@ -33,11 +33,9 @@ function FH_smooth_term(; abstol = 1e-14, reltol = 1e-14)
 
   # define residual vector
   function residual!(F, x :: AbstractVector{T}) where{T <: Real}
-    if integrator.p != x
-      OrdinaryDiffEqVerner.reinit!(integrator, u0)
-      integrator.p .= x
-      OrdinaryDiffEqVerner.solve!(integrator)
-    end
+    OrdinaryDiffEqVerner.reinit!(integrator, u0)
+    integrator.p .= x
+    OrdinaryDiffEqVerner.solve!(integrator)
     @inbounds for i in 1:length(integrator.sol.u)
       F[i] = integrator.sol.u[i][1] - data[i][1]
       F[i + length(integrator.sol.u)] = integrator.sol.u[i][2] - data[i][2]
@@ -85,7 +83,7 @@ oscillator with fixed, but unknown, parameters.
 ## Keyword Arguments
 
 All keyword arguments are passed directly to the `ADNLPModel` (or `ADNLSModel`)
-constructure, e.g., to set the automatic differentiation backend.
+constructor.
 
 ## Return Value
 
@@ -98,6 +96,7 @@ function fh_model(; kwargs...)
   nlp = ADNLPModels.ADNLPModel(misfit, ones(5); 
     hessian_backend = ADNLPModels.ReverseDiffADHessian,
     gradient_backend = ADNLPModels.ReverseDiffADGradient,
+    kwargs...
   )
   nls = ADNLPModels.ADNLSModel!(resid!, ones(5), nequ; 
     jacobian_residual_backend = ADNLPModels.ReverseDiffADJacobian,
@@ -106,6 +105,7 @@ function fh_model(; kwargs...)
     hessian_backend = ADNLPModels.ReverseDiffADHessian,
     hessian_residual_backend = ADNLPModels.ReverseDiffADHessian,
     gradient_backend = ADNLPModels.ReverseDiffADGradient,
+    kwargs...
   )
   return nlp, nls, x0
 end

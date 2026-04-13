@@ -1,4 +1,4 @@
-using LinearAlgebra, Test
+using LinearAlgebra, ReverseDiff, Test
 using ADNLPModels,
   LinearOperators,
   ManualNLPModels,
