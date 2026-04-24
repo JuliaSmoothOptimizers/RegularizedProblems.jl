@@ -42,6 +42,9 @@ function __init__()
   end
   @require QuadraticModels = "f468eda6-eac5-11e8-05a5-ff9e497bcd19" begin
     include("qp_rand_model.jl")
+    @require ProximalOperators = "a725b495-10eb-56fe-b38b-717eba820537" begin
+      include("testset_qp_rand.jl")
+    end
   end
 end
 
