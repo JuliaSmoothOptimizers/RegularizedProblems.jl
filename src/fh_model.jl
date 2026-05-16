@@ -48,6 +48,11 @@ function FH_smooth_term(; abstol = 1e-14, reltol = 1e-14)
   # define residual vector
   function residual(p, args...)
     F = simulate(p, args...)
+    if length(F) != length(data)
+      println("Length of residual does not match data length")
+      return fill(Inf, length(data))
+    end
+
     F .-= data
     return F
   end
