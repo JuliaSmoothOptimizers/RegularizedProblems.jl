@@ -44,6 +44,9 @@ function __init__()
     @require ProximalOperators = "a725b495-10eb-56fe-b38b-717eba820537" begin
       include("testset_qp_rand.jl")
     end
+    @require ShiftedProximalOperators = "d4fd37fa-580c-4e43-9b30-361c21aae263" begin
+      include("shiftedProximableNLPModel.jl")
+    end
   end
 end
 
