@@ -1,11 +1,11 @@
-using LinearAlgebra, Test
+using LinearAlgebra, ReverseDiff, Test
 using ADNLPModels,
-  DifferentialEquations,
   LinearOperators,
   ManualNLPModels,
   MLDatasets,
   NLPModels,
   NLPModelsModifiers,
+  OrdinaryDiffEqVerner,
   QuadraticModels
 using RegularizedProblems
 
