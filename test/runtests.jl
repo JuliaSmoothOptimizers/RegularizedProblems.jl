@@ -1,5 +1,6 @@
 using LinearAlgebra, Test
-using ADNLPModels, DifferentialEquations, LinearOperators, ManualNLPModels, MLDatasets, NLPModels, NLPModelsModifiers
+using ADNLPModels,
+  DifferentialEquations, LinearOperators, ManualNLPModels, MLDatasets, NLPModels, NLPModelsModifiers
 using NLPModelsTest, QuadraticModels
 using RegularizedProblems
 
@@ -40,15 +41,24 @@ end
   f(x) = zero(eltype(x))
   c(x) = A*x - b
   ad_model = ADNLPModel(f, model.meta.x0, c, zero(b), zero(b))
-  consistent_nlps([model, ad_model], exclude = [hess, hess_coord, jth_hess, jth_hess_coord, jth_hprod, ghjvprod, jth_hprod], test_derivative = false)
+  consistent_nlps(
+    [model, ad_model],
+    exclude = [hess, hess_coord, jth_hess, jth_hess_coord, jth_hprod, ghjvprod, jth_hprod],
+    test_derivative = false,
+  )
 
   # Bounded basis pursuit model
   A, b, x0 = bp_data(bounds = true)
   model, sol = bp_model(A, b, x0, bounds = true)
-  
+
   # Construct ADModel to compare with ManualNLPModels model
-  ad_model = ADNLPModel(f, model.meta.x0, zero(x0), Inf*ones(eltype(x0), length(x0)), c, zero(b), zero(b))
-  consistent_nlps([model, ad_model], exclude = [hess, hess_coord, jth_hess, jth_hess_coord, jth_hprod, ghjvprod, jth_hprod], test_derivative = false)
+  ad_model =
+    ADNLPModel(f, model.meta.x0, zero(x0), Inf*ones(eltype(x0), length(x0)), c, zero(b), zero(b))
+  consistent_nlps(
+    [model, ad_model],
+    exclude = [hess, hess_coord, jth_hess, jth_hess_coord, jth_hprod, ghjvprod, jth_hprod],
+    test_derivative = false,
+  )
 end
 
 @testset "BPDN" begin

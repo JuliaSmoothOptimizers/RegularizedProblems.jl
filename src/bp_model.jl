@@ -57,7 +57,7 @@ basis-pursuit problem, and the exact solution x̄.
 
 If `bounds == true`, the positive part of x̄ is returned.
 """
-bp_model(;compound::Int = 1, bounds::Bool = false) = 
+bp_model(; compound::Int = 1, bounds::Bool = false) =
   bp_model(200 * compound, 512 * compound, 10 * compound, bounds = bounds)
 
 function bp_model(m::Int, n::Int, k::Int; bounds::Bool = false)
@@ -65,7 +65,12 @@ function bp_model(m::Int, n::Int, k::Int; bounds::Bool = false)
   return bp_model(A, b, x0; bounds = bounds)
 end
 
-function bp_model(A::AbstractMatrix{T}, b::AbstractVector{T}, x0::AbstractVector{T}; bounds::Bool = false) where{T}
+function bp_model(
+  A::AbstractMatrix{T},
+  b::AbstractVector{T},
+  x0::AbstractVector{T};
+  bounds::Bool = false,
+) where {T}
   m, n = size(A)
 
   # Constrained API
@@ -95,9 +100,9 @@ function bp_model(A::AbstractMatrix{T}, b::AbstractVector{T}, x0::AbstractVector
 
   function jac_coord!(vals, x)
     m, n = size(A)
-    @inbounds for j in 1:n
+    @inbounds for j = 1:n
       offset = (j-1)*m
-      @inbounds for i in 1:m
+      @inbounds for i = 1:m
         k = i + offset
         vals[k] = A[i, j]
       end
@@ -122,8 +127,8 @@ function bp_model(A::AbstractMatrix{T}, b::AbstractVector{T}, x0::AbstractVector
   end
 
   nlp = NLPModel(
-    zero(x0), 
-    obj, 
+    zero(x0),
+    obj,
     lvar = (bounds ? zero(x0) : -Inf*ones(T, length(x0))),
     grad = grad!,
     hprod = hprod!,
@@ -131,7 +136,7 @@ function bp_model(A::AbstractMatrix{T}, b::AbstractVector{T}, x0::AbstractVector
     cons = (cons!, zero(b), zero(b)),
     jprod = jprod!,
     jtprod = jtprod!,
-    jac_coord = (rows_jac, cols_jac, jac_coord!)
+    jac_coord = (rows_jac, cols_jac, jac_coord!),
   )
 
   return nlp, x0
