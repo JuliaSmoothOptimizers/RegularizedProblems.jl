@@ -4,4 +4,4 @@ on:
       types: [opened, synchronize, reopened]
 jobs:
   breakage:
-    uses: JuliaSmoothOptimizers/.github/.github/workflows/Breakage.yml@main
+    uses: MaxenceGollier/.github_JSO/.github/workflows/Breakage.yml@test-update-comment
