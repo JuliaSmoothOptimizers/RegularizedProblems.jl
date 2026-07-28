@@ -1,4 +1,4 @@
-module RegularizedProblems
+module RegularizedProblems 
 
 using LinearAlgebra, SparseArrays
 using Random, Requires
