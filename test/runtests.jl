@@ -7,6 +7,7 @@ using ADNLPModels,
   NLPModels,
   NLPModelsModifiers,
   QuadraticModels
+using FFTW, Images, Wavelets
 using RegularizedProblems
 
 function test_well_defined(model, nls_model, sol)
@@ -170,6 +171,19 @@ end
   @test all(-2.0 .≤ model.meta.lvar .≤ 0.0)
   @test all(0.0 .≤ model.meta.uvar .≤ 2.0)
   @test all(model.meta.x0 .== 0)
+end
+
+@testset "denoising_model" begin
+  n, m = 256, 256
+  n_p, m_p = 260, 260
+  kernel_size = 9
+  model, sol = denoising_model((n, m), (n_p, m_p), kernel_size)
+  @test typeof(model) <: FirstOrderModel
+  @test typeof(sol) == typeof(model.meta.x0)
+  @test model.meta.nvar == n * m
+  x = model.meta.x0
+  @test typeof(obj(model, x)) <: Float64
+  @test typeof(grad(model, x)) <: Vector{Float64}
 end
 
 include("rmodel_tests.jl")
