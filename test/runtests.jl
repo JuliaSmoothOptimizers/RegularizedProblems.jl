@@ -3,6 +3,7 @@ using ADNLPModels,
   DifferentialEquations,
   LinearOperators,
   ManualNLPModels,
+  MAT,
   MLDatasets,
   NLPModels,
   NLPModelsModifiers,
@@ -173,3 +174,4 @@ end
 end
 
 include("rmodel_tests.jl")
+include("abcd_tests.jl")

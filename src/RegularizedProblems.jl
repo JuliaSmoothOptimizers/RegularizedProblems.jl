@@ -12,6 +12,8 @@ include("lrcomp_model.jl")
 include("matrand_model.jl")
 include("group_lasso_model.jl")
 include("nnmf.jl")
+include("sparse_regression_models.jl")
+include("abcd_problems.jl")
 
 function __init__()
   @require ProximalOperators = "a725b495-10eb-56fe-b38b-717eba820537" begin
@@ -37,6 +39,12 @@ function __init__()
       @require ShiftedProximalOperators = "d4fd37fa-580c-4e43-9b30-361c21aae263" begin
         include("testset_svm.jl")
       end
+    end
+  end
+  @require MAT = "23992714-dd62-5051-b70f-ba57cb901cac" begin
+    include("abcd_model.jl")
+    @require ProximalOperators = "a725b495-10eb-56fe-b38b-717eba820537" begin
+      include("testset_abcd.jl")
     end
   end
   @require QuadraticModels = "f468eda6-eac5-11e8-05a5-ff9e497bcd19" begin
