@@ -1,162 +1,165 @@
 export generate_uniform_blur, generate_gaussian_blur
 
-"""
-Implementation of the denoising problem described in 
+#=
+Blur and wavelet operators for the image denoising problem described in
 
-Stella, L., Themelis, A. & Patrinos, P. 
-Forward–backward quasi-Newton methods for nonsmooth optimization problems. 
+Stella, L., Themelis, A. & Patrinos, P.
+Forward–backward quasi-Newton methods for nonsmooth optimization problems.
 Comput Optim Appl 67, 443–487 (2017). https://doi.org/10.1007/s10589-017-9912-y
 
 and adapted from the original implementation in Python by the authors of the paper:
 
-Chouzenoux, E., Martin, S. & Pesquet, JC. 
-A Local MM Subspace Method for Solving Constrained Variational Problems in Image Recovery. 
+Chouzenoux, E., Martin, S. & Pesquet, JC.
+A Local MM Subspace Method for Solving Constrained Variational Problems in Image Recovery.
 J Math Imaging Vis 65, 253–276 (2023). https://doi.org/10.1007/s10851-022-01112-z
-"""
+=#
 
-# Function to unpad an array
-function unpad(x, n_p, m_p, n)
-  a = n_p - n + 1
-  x = reshape_array(x, (n_p, m_p))
-  unpadded_x = x[a:end, a:end]
-  return unpadded_x
-end
-
-# Function to pad an array
-function pad(z, s1, s2)
-  x = cat(zeros(size(z, 1), s1), z, dims = 2)
-  x = cat(x, zeros(size(z, 1), s2), dims = 2)
-  x = cat(x, zeros(s2, size(x, 2)), dims = 1)
-  x = cat(zeros(s1, size(x, 2)), x, dims = 1)
-  return x
-end
-
-# Function to pad a specific array to match suitable dimensions
-function pad_x(z, a)
-  t = cat(zeros(size(z, 1), a), z, dims = 2)
-  t = cat(zeros(a, size(z, 2) + a), t, dims = 1)
-  return t
-end
-
-# Function to create a meshgrid for the gaussian kernel
-function meshgrid(x_range, y_range)
-  m = length(x_range)
-  n = length(y_range)
-  x = repeat(x_range, inner = (1, n))
-  y = repeat(y_range', outer = (m, 1))
-  return x, y
-end
-
-# Function to generate a Gaussian kernel
-function my_gaussian_kernel(kernel_size, kernel_sigma)
-  x, y = meshgrid((-kernel_size):kernel_size, (-kernel_size):kernel_size)
-  normal = 1 / (2 * pi * kernel_sigma^2)
-  kernel = exp.(-((x .^ 2 .+ y .^ 2) / (2.0 * kernel_sigma^2))) * normal
+# Normalized (2k+1) × (2k+1) Gaussian kernel with standard deviation `kernel_sigma`.
+function gaussian_kernel(::Type{T}, kernel_size::Integer, kernel_sigma::Real) where {T}
+  r = (-kernel_size):kernel_size
+  s = 2 * T(kernel_sigma)^2
+  kernel = [exp(-(i^2 + j^2) / s) for i ∈ r, j ∈ r]
   kernel ./= sum(kernel)
   return kernel
 end
 
-# Function to generate a uniform kernel
-function uniform_kernel(kernel_size)
-  kernel = ones(2 * kernel_size + 1, 2 * kernel_size + 1)
-  kernel = kernel / sum(kernel)
-  return kernel
+# Normalized (2k+1) × (2k+1) uniform (box) kernel.
+uniform_kernel(::Type{T}, kernel_size::Integer) where {T} =
+  fill(one(T) / (2 * kernel_size + 1)^2, 2 * kernel_size + 1, 2 * kernel_size + 1)
+
+# Real-FFT coefficients of the blur kernel, zero-padded to `shape_p` and circularly shifted
+# so that its center sits at the origin.
+# The 1 / (n_p * m_p) normalization of the inverse FFT is folded into the coefficients so that
+# the unnormalized backward transform `brfft` can be used when applying the operator.
+function blur_spectrum(kernel::AbstractMatrix{T}, shape_p) where {T}
+  n_p, m_p = shape_p
+  k1, k2 = size(kernel)
+  r = div(n_p - k1, 2)
+  c = div(m_p - k2, 2)
+  K = zeros(T, n_p, m_p)
+  K[(r + 1):(r + k1), (c + 1):(c + k2)] .= kernel
+  spectrum = FFTW.rfft(FFTW.ifftshift(K))
+  spectrum ./= n_p * m_p
+  return spectrum
 end
 
-# Main function to generate H, H_T, W, and W_T functions for gaussian kernel
-function generate_gaussian_blur(shape, shape_p, KERNEL_SIZE, KERNEL_SIGMA = 1.5)
-  (n, m) = shape
-  (n_p, m_p) = shape_p
-  a = n_p - n
-  
-  kernel_h = my_gaussian_kernel(KERNEL_SIZE, KERNEL_SIGMA)
+function blur_and_wavelet_operators(
+  kernel::AbstractMatrix{T},
+  shape,
+  shape_p,
+  levels::Integer,
+) where {T <: Union{Float32, Float64}}
+  n, m = shape
+  n_p, m_p = shape_p
+  (n_p ≥ n && m_p ≥ m) || throw(
+    ArgumentError("the padded shape $shape_p must be at least as large as the image shape $shape"),
+  )
+  (n_p ≥ size(kernel, 1) && m_p ≥ size(kernel, 2)) || throw(
+    ArgumentError("the padded shape $shape_p is too small for a kernel of size $(size(kernel))"),
+  )
+  (n % 2^levels == 0 && m % 2^levels == 0) || throw(
+    ArgumentError(
+      "the image dimensions $shape must be divisible by 2^$levels for a $levels-level wavelet transform",
+    ),
+  )
 
-  sz = (n_p - (2 * KERNEL_SIZE + 1), m_p - (2 * KERNEL_SIZE + 1))
-  kernel_h = pad(kernel_h, div(sz[1], 2), div(sz[1], 2) + 1)
-  kernel_h = FFTW.ifftshift(kernel_h)
-  fft_h = FFTW.fft(kernel_h)
+  nm = n * m
+  a1 = n_p - n  # number of zero rows padded above the image
+  a2 = m_p - m  # number of zero columns padded to the left of the image
 
-  # Function H: Applies a linear transformation H which models the blur to an input x
-  function H(x)
-    x = reshape_array(x, (n, m))
-    x = pad_x(x, a)
-    fft_x = FFTW.fft(x)
-    x_new = real(FFTW.ifft(fft_x .* fft_h))
-    return unpad(x_new, n_p, m_p, n)[:]
+  spectrum = blur_spectrum(kernel, shape_p)
+  spectrum_adj = conj.(spectrum)  # spectrum of the adjoint (flipped) kernel
+
+  # Work arrays and FFT plans shared by H! and H_T!.
+  xpad = zeros(T, n_p, m_p)
+  xhat = similar(spectrum)
+  fwd = FFTW.plan_rfft(xpad)
+  bwd = FFTW.plan_brfft(xhat, n_p)
+
+  # y = crop(ifft(fft(pad(x)) .* s))
+  function blur!(y, x, s)
+    length(x) == nm || throw(DimensionMismatch("input has length $(length(x)), expected $nm"))
+    length(y) == nm || throw(DimensionMismatch("output has length $(length(y)), expected $nm"))
+    fill!(xpad, zero(T))
+    @inbounds for j = 1:m, i = 1:n
+      xpad[a1 + i, a2 + j] = x[i + (j - 1) * n]
+    end
+    mul!(xhat, fwd, xpad)
+    xhat .*= s
+    mul!(xpad, bwd, xhat)  # overwrites xhat as well
+    @inbounds for j = 1:m, i = 1:n
+      y[i + (j - 1) * n] = xpad[a1 + i, a2 + j]
+    end
+    return y
   end
 
-  # Function H_T: Applies the transpose of the linear transformation H to an input x
-  function H_T(x)
-    x = reshape_array(x, (n, m))
-    x = pad_x(x, a)
-    fft_x = FFTW.fft(x)
-    x_new = real(FFTW.ifft(fft_x .* conj.(fft_h)))
-    return unpad(x_new, n_p, m_p, n)[:]
-  end
+  H!(y, x) = blur!(y, x, spectrum)
+  H_T!(y, x) = blur!(y, x, spectrum_adj)
 
   wt = Wavelets.wavelet(Wavelets.WT.haar)
 
-  # ----- Discrete Wavelet Transform (DWT) -----
-
-  # Function W: Applies the DWT to an input x
-  function W(x)
-    return Wavelets.dwt(reshape_array(x, (n, m)), wt, 4)[:]
+  function W!(y, x)
+    Wavelets.dwt!(reshape_array(y, (n, m)), reshape_array(x, (n, m)), wt, levels)
+    return y
   end
 
-  # Function W_T: Applies the inverse DWT to an input x
-  function W_T(x)
-    return Wavelets.idwt(reshape_array(x, (n, m)), wt, 4)[:]
+  function W_T!(y, x)
+    Wavelets.idwt!(reshape_array(y, (n, m)), reshape_array(x, (n, m)), wt, levels)
+    return y
   end
 
-  # Return the generated functions
-  return H, H_T, W, W_T
+  return H!, H_T!, W!, W_T!
 end
 
-# Main function to generate H, H_T, W, and W_T functions for gaussian kernel
-function generate_uniform_blur(shape, shape_p, KERNEL_SIZE)
-  (n, m) = shape
-  (n_p, m_p) = shape_p
-  a = n_p - n
+"""
+    H!, H_T!, W!, W_T! = generate_gaussian_blur(shape, shape_p, kernel_size, kernel_sigma = 1.5; T = Float64, levels = 4)
 
-  kernel_h = uniform_kernel(KERNEL_SIZE)
-  
-  sz = (n_p - (2 * KERNEL_SIZE + 1), m_p - (2 * KERNEL_SIZE + 1))
-  kernel_h = pad(kernel_h, div(sz[1], 2), div(sz[1], 2) + 1)
-  kernel_h = FFTW.ifftshift(kernel_h)
-  fft_h = FFTW.fft(kernel_h)
+Return in-place linear operators used to model image deblurring with a Gaussian blur.
 
-  # Function H: Applies a linear transformation H which models the blur to an input x
-  function H(x)
-    x = reshape_array(x, (n, m))
-    x = pad_x(x, a)
-    fft_x = FFTW.fft(x)
-    x_new = real(FFTW.ifft(fft_x .* fft_h))
-    return unpad(x_new, n_p, m_p, n)[:]
-  end
+Each operator is called as `op!(y, x)` and overwrites `y` with the image of `x`, where `x` and
+`y` are vectors of length `prod(shape)` that store a `shape` image column by column:
 
-  # Function H_T: Applies the transpose of the linear transformation H to an input x
-  function H_T(x)
-    x = reshape_array(x, (n, m))
-    x = pad_x(x, a)
-    fft_x = FFTW.fft(x)
-    x_new = real(FFTW.ifft(fft_x .* conj.(fft_h)))
-    return unpad(x_new, n_p, m_p, n)[:]
-  end
+* `H!(y, x)` blurs `x` with a `(2 kernel_size + 1) × (2 kernel_size + 1)` Gaussian kernel of
+  standard deviation `kernel_sigma`: the image is zero-padded to `shape_p`, circularly convolved
+  with the kernel and cropped back to `shape`;
+* `H_T!(y, x)` applies the adjoint of `H!`;
+* `W!(y, x)` applies an orthogonal `levels`-level 2D Haar wavelet transform;
+* `W_T!(y, x)` applies the inverse, which is also the adjoint, of `W!`.
 
-  wt = Wavelets.wavelet(Wavelets.WT.haar)
+The operators reuse preallocated work arrays and FFT plans, so they do not allocate arrays of the
+size of the image, but they are not thread safe.
+For `W!` and `W_T!`, `y` and `x` must be different arrays.
 
-  # ----- Discrete Wavelet Transform (DWT) -----
+## Keyword arguments
 
-  # Function W: Applies the DWT to an input x
-  function W(x)
-    return Wavelets.dwt(reshape_array(x, (n, m)), wt, 4)[:]
-  end
+* `T`: floating-point type, `Float64` or `Float32`;
+* `levels`: number of levels of the wavelet transform; each dimension of `shape` must be divisible by `2^levels`.
+"""
+function generate_gaussian_blur(
+  shape,
+  shape_p,
+  kernel_size::Integer,
+  kernel_sigma::Real = 1.5;
+  T::Type{<:Union{Float32, Float64}} = Float64,
+  levels::Integer = 4,
+)
+  kernel = gaussian_kernel(T, kernel_size, kernel_sigma)
+  return blur_and_wavelet_operators(kernel, shape, shape_p, levels)
+end
 
-  # Function W_T: Applies the inverse DWT to an input x
-  function W_T(x)
-    return Wavelets.idwt(reshape_array(x, (n, m)), wt, 4)[:]
-  end
+"""
+    H!, H_T!, W!, W_T! = generate_uniform_blur(shape, shape_p, kernel_size; T = Float64, levels = 4)
 
-  # Return the generated functions
-  return H, H_T, W, W_T
+Same as [`generate_gaussian_blur`](@ref), but `H!` blurs with a uniform (box) kernel of size
+`(2 kernel_size + 1) × (2 kernel_size + 1)`.
+"""
+function generate_uniform_blur(
+  shape,
+  shape_p,
+  kernel_size::Integer;
+  T::Type{<:Union{Float32, Float64}} = Float64,
+  levels::Integer = 4,
+)
+  kernel = uniform_kernel(T, kernel_size)
+  return blur_and_wavelet_operators(kernel, shape, shape_p, levels)
 end
