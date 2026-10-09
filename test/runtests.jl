@@ -7,6 +7,7 @@ using ADNLPModels,
   NLPModels,
   NLPModelsModifiers,
   QuadraticModels
+using FFTW, Images, Wavelets
 using RegularizedProblems
 
 function test_well_defined(model, nls_model, sol)
@@ -172,4 +173,5 @@ end
   @test all(model.meta.x0 .== 0)
 end
 
+include("denoising_tests.jl")
 include("rmodel_tests.jl")
