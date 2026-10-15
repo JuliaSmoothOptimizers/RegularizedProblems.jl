@@ -147,13 +147,45 @@ end
   @test model.meta.nvar == 100*100
   @test model.meta.ncon > 0
   @test model.meta.ncon < 100*100
-  @test cons(model, sol) .≈ 0
+  @test norm(cons(model, sol)) ≤ 1e-12
 
   # Construct ADModel to compare with ManualNLPModels model
   f(x) = zero(eltype(x))
   c(x) = x[ω] - B
   ad_model = ADNLPModel(f, model.meta.x0, c, zero(B), zero(B))
   consistent_nlps([model, ad_model], exclude = [hess, hess_coord, jth_hess, jth_hess_coord, jth_hprod, ghjvprod, jth_hprod], test_derivative = false)
+
+  # Initial guesses, on a non-square instance to check the indexing
+  m, n, r = 12, 8, 2
+  l = min(m, n)
+  xs, B, ω = mat_rand(m, n, r, 0.8, 0.0, 0.0, 0.0)
+  @test xs[ω] == B
+  @test_throws ArgumentError random_matrix_completion_eq_model(xs, B, ω, init = :foo)
+  @test_throws ArgumentError random_matrix_completion_eq_model(xs, B, ω, mode = :foo)
+
+  for mode in (:forward, :backward)
+    model, sol = random_matrix_completion_eq_model(xs, B, ω, mode = mode)
+    @test model.meta.nvar == (mode == :forward ? m * n : m * l + l + n * l)
+    @test norm(cons(model, sol)) ≤ 1e-10
+
+    model, _ = random_matrix_completion_eq_model(xs, B, ω, mode = mode, init = :zero)
+    @test all(model.meta.x0 .== 0)
+
+    model, _ = random_matrix_completion_eq_model(xs, B, ω, mode = mode, init = :feasible)
+    @test norm(cons(model, model.meta.x0)) ≤ 1e-10
+
+    model, _ = random_matrix_completion_eq_model(xs, B, ω, mode = mode, init = :spectral, r = r)
+    x0 = model.meta.x0
+    X0 = mode == :forward ? reshape(x0, m, n) :
+         reshape(x0[1:(m * l)], m, l) * Diagonal(x0[(m * l + 1):(m * l + l)]) *
+         reshape(x0[(m * l + l + 1):end], l, n)
+    @test rank(X0) == r
+    if mode == :backward
+      @test all(x0[(m * l + r + 1):(m * l + l)] .== 0)
+      # orthogonality constraints hold, only the data constraints are violated
+      @test norm(cons(model, x0)[1:(l * (l + 1))]) ≤ 1e-10
+    end
+  end
 
 end
 

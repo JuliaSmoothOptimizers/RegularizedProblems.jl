@@ -9,7 +9,7 @@ function mat_rand(m::Int, n::Int, r::Int, sr::Float64, va::Float64, vb::Float64,
   B = (1 - c) * add_gauss(B, va, 0; clip = false) + c * add_gauss(B, vb, 0; clip = false)
   ω = zeros(Int64, size(Ω, 1))   # Vectorize Omega
   for i = 1:size(Ω, 1)
-    ω[i] = Ω[i][1] + n * (Ω[i][2] - 1)
+    ω[i] = Ω[i][1] + m * (Ω[i][2] - 1)
   end
   return xs, B, ω
 end
@@ -142,11 +142,24 @@ where `` \\sigma \\in \\mathbb{R}^l ``, `` U \\in \\mathbb{R}^m \\times \\mathbb
 * `n :: Int = 100`: the number of columns of X and A;
 * `r :: Int = 5`: the desired rank of A;
 * `sr :: Float64 = 0.8`: a threshold between 0 and 1 used to determine the set of pixels retained by the operator P;
-* `mode :: Symbol = :forward`: either `:forward` or `:backward`, represents which form of the equality constrained matrix completion problem is to be represented (see above).
+* `mode :: Symbol = :forward`: either `:forward` or `:backward`, represents which form of the equality constrained matrix completion problem is to be represented (see above);
+* `init :: Symbol = :spectral`: the initial guess stored in `model.meta.x0` (see below).
+
+## Initial guess
+
+Let `` P_\\Omega(A) `` denote the matrix of observed entries, with zeros elsewhere,
+and `` p = |\\Omega| / (mn) `` the sampling rate.
+In backward mode, the initial guess is given in factored form `` (U, \\sigma, V) ``, from a thin SVD.
+
+* `:spectral`: the best rank-`r` approximation of `` P_\\Omega(A) / p `` (spectral initialization).
+  It is infeasible, but close to the solution with high probability. In backward mode, `` U `` and `` V `` are orthonormal and the last `` l - r `` entries of `` \\sigma `` are zero;
+* `:feasible`: `` P_\\Omega(A) `` itself, which satisfies all the constraints but generically has full rank;
+* `:zero`: the zero vector. Beware that in forward mode, `` X = 0 `` is a local minimizer of `` \\mathrm{rank}(X) + \\tau \\|c(X)\\| `` for any `` \\tau ``,
+  and that in backward mode, the Jacobian of the constraints vanishes at zero, so that gradient-based methods cannot leave this point.
 
 ## Return Value
 
-n instance of an `NLPModel` representing the
+An instance of an `NLPModel` representing the
 equality constrained matrix completion problem, and the exact solution.
 """
 function random_matrix_completion_eq_model(;
@@ -154,21 +167,60 @@ function random_matrix_completion_eq_model(;
   n::Int = 100,
   r::Int = 5,
   sr::Float64 = 0.8,
-  mode::Symbol = :forward
+  mode::Symbol = :forward,
+  init::Symbol = :spectral,
 )
   xs, B, ω = mat_rand(m, n, r, sr, 0.0, 0.0, 0.0)
-  return random_matrix_completion_eq_model(xs, B, ω, mode = mode)
+  return random_matrix_completion_eq_model(xs, B, ω, mode = mode, init = init, r = r)
 end
 
-function random_matrix_completion_eq_model(xs, B, ω; mode = :forward)
-  nlp, x0 = mode == :forward ? random_matrix_completion_eq_model_forward(xs, B, ω) :
-    random_matrix_completion_eq_model_backward(xs, B, ω)
+"""
+    model, sol = random_matrix_completion_eq_model(xs, B, ω; mode = :forward, init = :spectral, r = min(size(xs)...))
+
+Same as above for given data, where `B` contains the observed entries of `xs` and `ω` their
+column-major linear indices.
+The rank `r` is only used by the spectral initialization; its default `min(m, n)` performs no truncation.
+"""
+function random_matrix_completion_eq_model(
+  xs,
+  B,
+  ω;
+  mode::Symbol = :forward,
+  init::Symbol = :spectral,
+  r::Int = min(size(xs)...),
+)
+  mode ∈ (:forward, :backward) ||
+    throw(ArgumentError("unknown mode :$mode; choose :forward or :backward"))
+  m, n = size(xs)
+  U0, σ0, Vt0 = matrix_completion_initial_guess(m, n, B, ω; init = init, r = r)
+  return mode == :forward ? random_matrix_completion_eq_model_forward(xs, B, ω, U0, σ0, Vt0) :
+         random_matrix_completion_eq_model_backward(xs, B, ω, U0, σ0, Vt0)
 end
 
-function random_matrix_completion_eq_model_forward(xs, B, ω)
+# Initial guess for the equality-constrained matrix completion problem,
+# returned as thin SVD factors (U, σ, Vt) of an m × n matrix, with l = min(m, n) components.
+# See the docstring of random_matrix_completion_eq_model for the available choices of init.
+function matrix_completion_initial_guess(m, n, B, ω; init::Symbol = :spectral, r::Int = min(m, n))
+  init ∈ (:spectral, :feasible, :zero) ||
+    throw(ArgumentError("unknown init :$init; choose :spectral, :feasible or :zero"))
+  T = eltype(B)
+  l = min(m, n)
+  init == :zero && return zeros(T, m, l), zeros(T, l), zeros(T, l, n)
+
+  Y = zeros(T, m, n)
+  Y[ω] .= B                             # P_Ω(A)
+  init == :spectral && (Y ./= length(ω) / (m * n))
+  F = svd(Y)
+  σ = copy(F.S)
+  init == :spectral && (σ[(clamp(r, 0, l) + 1):end] .= 0)
+  return Matrix(F.U), σ, Matrix(F.Vt)
+end
+
+function random_matrix_completion_eq_model_forward(xs, B, ω, U0, σ0, Vt0)
 
   m, n = size(xs)
   xs = collect(vec(xs))
+  x0 = vec(U0 * Diagonal(σ0) * Vt0)
 
   # Constrained API
   function cons!(cx, x)
@@ -184,11 +236,11 @@ function random_matrix_completion_eq_model_forward(xs, B, ω)
     @views jtv[ω] .= v
   end
 
-  function hprod!(hv, x, y, v; obj_weight = one(T))
+  function hprod!(hv, x, y, v; obj_weight = 1.0)
     return hv .= 0
   end
 
-  function hess_coord!(vals, x, y; obj_weight = one(T))
+  function hess_coord!(vals, x, y; obj_weight = 1.0)
     return zeros(Float64, 0)
   end
 
@@ -217,7 +269,7 @@ function random_matrix_completion_eq_model_forward(xs, B, ω)
   end
 
   nlp = NLPModel(
-    zero(xs), 
+    x0,
     obj, 
     grad = grad!,
     hprod = hprod!,
@@ -232,7 +284,7 @@ function random_matrix_completion_eq_model_forward(xs, B, ω)
 
 end
 
-function random_matrix_completion_eq_model_backward(xs, B, ω)
+function random_matrix_completion_eq_model_backward(xs, B, ω, U0, σ0, Vt0)
   m, n = size(xs)
   l = min(m, n)
   xs_svd = svd(xs)
@@ -242,7 +294,7 @@ function random_matrix_completion_eq_model_backward(xs, B, ω)
   function c!(cx, x)
     U = @views reshape(x[1:m*l], m, l)
     σ = @views x[m*l + 1 : m*l + l]
-    V = @views reshape(x[m*l + l + 1:end], n, l)
+    V = @views reshape(x[m*l + l + 1:end], l, n)  # V stores Vᵀ, as in xs
 
     n_entries_l = Int(l*(l+1)/2)
 
@@ -261,9 +313,7 @@ function random_matrix_completion_eq_model_backward(xs, B, ω)
 
     offset = 2*n_entries_l
     @inbounds for i in eachindex(ω)
-      i_idx = mod(ω[i], n)
-      i_idx = i_idx == 0 ? n : i_idx
-      j_idx = Int((ω[i] - i_idx)/n) + 1
+      i_idx, j_idx = Tuple(CartesianIndices((m, n))[ω[i]])
       cx[offset + i] = - B[i]
       @inbounds for j = 1:l
         cx[offset + i] += σ[j]*U[i_idx, j]*V[j, j_idx]
@@ -276,7 +326,7 @@ function random_matrix_completion_eq_model_backward(xs, B, ω)
   function obj(x)
     return 0.0
   end
-  x0 = zeros(Float64, m*l + n*l + l)
+  x0 = collect(vcat(vec(U0), σ0, vec(Vt0)))
   ncon = l*(l+1) + length(B)
   return ADNLPModels.ADNLPModel!(
     obj,
