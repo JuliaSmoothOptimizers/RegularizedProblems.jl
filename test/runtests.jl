@@ -1,11 +1,6 @@
 using LinearAlgebra, Test
 using LinearOperators,
-  ManualNLPModels,
-  MLDatasets,
-  NLPModels,
-  NLPModelsModifiers,
-  OrdinaryDiffEqVerner,
-  QuadraticModels
+  ManualNLPModels, MLDatasets, NLPModels, NLPModelsModifiers, OrdinaryDiffEqVerner, QuadraticModels
 using RegularizedProblems
 
 function test_well_defined(model, nls_model, sol)

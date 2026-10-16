@@ -18,11 +18,11 @@ function FH_sens!(dz, z, p, t)
   FH_ODE!(view(dz, 1:2), view(z, 1:2), p, t)  # compute the first two entries of dz
   # ∂f/∂u
   j11, j12 = (1 - V^2) / μ, -1 / μ
-  j21, j22   = μ * a, -μ * b
+  j21, j22 = μ * a, -μ * b
   # ∂f/∂p, one entry per parameter (I, μ, a, b, c)
   q1 = (1 / μ, -dz[1] / μ, zero(V), zero(V), zero(V))
   q2 = (zero(V), dz[2] / μ, μ * V, -μ * W, μ)
-  for k in 1:5
+  for k = 1:5
     dz[2k + 1] = j11 * z[2k + 1] + j12 * z[2k + 2] + q1[k]
     dz[2k + 2] = j21 * z[2k + 1] + j22 * z[2k + 2] + q2[k]
   end
@@ -52,10 +52,10 @@ end
 
 @inline function _record!(c::FHCache, z)
   nt, n = length(z), Int(length(z[1])/2)
-  for k in 1:nt
+  for k = 1:nt
     c.F[k] = z[k][1] - c.data[k, 1]
     c.F[nt + k] = z[k][2] - c.data[k, 2]
-    for j in 1:(n-1)
+    for j = 1:(n - 1)
       c.J[k, j] = z[k][2j + 1]
       c.J[k + nt, j] = z[k][2j + 2]
     end
@@ -119,9 +119,22 @@ function _fh_cache(
   sinteg = OrdinaryDiffEqVerner.init(prob12, alg; opts...)
 
   c = FHCache(
-    integ, sinteg, copy(u0), z0, ts, zeros(T, nt, 2), zeros(T, 2), zeros(T, 12),
-    zeros(T, 2nt), zeros(T, 2nt, 5), fill(T(NaN), 5), fill(T(NaN), 5),
-    false, false, false, false,
+    integ,
+    sinteg,
+    copy(u0),
+    z0,
+    ts,
+    zeros(T, nt, 2),
+    zeros(T, 2),
+    zeros(T, 12),
+    zeros(T, 2nt),
+    zeros(T, 2nt, 5),
+    fill(T(NaN), 5),
+    fill(T(NaN), 5),
+    false,
+    false,
+    false,
+    false,
   )
 
   # Synthetic data: with data = 0, F = [V(t); W(t)] at the true parameters.
