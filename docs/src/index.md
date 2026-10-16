@@ -45,7 +45,7 @@ Calling `model = bpdn_nls_model()` returns the same problem modeled explicitly a
 
 ### Fitzhugh-Nagumo data-fitting problem
 
-If `ADNLPModels`, `OrdinaryDiffEqVerner` and `ReverseDiff` have been imported, `model = fh_model()` returns a model representing the over-determined nonlinear least-squares residual
+If `OrdinaryDiffEqVerner` has been imported, `model = fh_model()` returns a model representing the over-determined nonlinear least-squares residual
 ```math
 f(x) = \tfrac{1}{2} \|F(x)\|_2^2,
 ```
