@@ -1,4 +1,4 @@
-using LinearAlgebra, ReverseDiff, Test
+using LinearAlgebra, Enzyme, Test
 using ADNLPModels,
   LinearOperators,
   ManualNLPModels,
