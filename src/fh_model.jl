@@ -50,47 +50,31 @@ mutable struct FHCache{T, I2, I12}
   J_success::Bool
 end
 
-@inline function _record!(c::FHCache, k, u, ::Val{false})
-  nt = length(c.ts)
-  @inbounds begin
-    c.F[k] = u[1] - c.data[k, 1]
-    c.F[k + nt] = u[2] - c.data[k, 2]
-  end
-end
-
-@inline function _record!(c::FHCache, k, z, ::Val{true})
-  _record!(c, k, z, Val(false))
-  nt = length(c.ts)
-  @inbounds for j in 1:5
-    c.J[k, j] = z[2j + 1]
-    c.J[k + nt, j] = z[2j + 2]
+@inline function _record!(c::FHCache, z)
+  nt, n = length(z), Int(length(z[1])/2)
+  for k in 1:nt
+    c.F[k] = z[k][1] - c.data[k, 1]
+    c.F[nt + k] = z[k][2] - c.data[k, 2]
+    for j in 1:(n-1)
+      c.J[k, j] = z[k][2j + 1]
+      c.J[k + nt, j] = z[k][2j + 2]
+    end
   end
 end
 
 # Integrate with parameters x and record the solution at every c.ts[k].
-function _simulate!(c::FHCache, integ, uinit, buf, x, sens::Val)
+function _simulate!(c::FHCache, integ, uinit, buf, x)
   copyto!(integ.p, x)
   OrdinaryDiffEqVerner.reinit!(integ, uinit)
-  ts = c.ts
-  nt = length(ts)
-  copyto!(buf, uinit)
-  _record!(c, 1, buf, sens)
-  k = 2
-  while k <= nt
-    OrdinaryDiffEqVerner.step!(integ)
-    OrdinaryDiffEqVerner.check_error(integ) == OrdinaryDiffEqVerner.ReturnCode.Success || return false
-    while k <= nt && ts[k] <= integ.t
-      integ(buf, ts[k])                     # in-place interpolation, no allocation
-      _record!(c, k, buf, sens)
-      k += 1
-    end
-  end
+  OrdinaryDiffEqVerner.solve!(integ)
+  integ.sol.retcode == OrdinaryDiffEqVerner.ReturnCode.Success || return false
+  _record!(c, integ.sol.u)
   return true
 end
 
 function _update_F!(c::FHCache, x)
   (c.F_valid && x == c.xF) && return c.F_success
-  sim_success = _simulate!(c, c.integ, c.u0, c.buf2, x, Val(false))
+  sim_success = _simulate!(c, c.integ, c.u0, c.buf2, x)
   sim_success || fill!(c.F, NaN)
   copyto!(c.xF, x)
   c.F_valid, c.F_success = true, sim_success
@@ -99,7 +83,7 @@ end
 
 function _update_J!(c::FHCache, x)
   (c.J_valid && x == c.xJ) && return c.J_success
-  sim_success = _simulate!(c, c.sinteg, c.z0, c.buf12, x, Val(true))   # also refreshes F
+  sim_success = _simulate!(c, c.sinteg, c.z0, c.buf12, x)   # also refreshes F
   if !sim_success
     fill!(c.F, NaN)
     fill!(c.J, NaN)
@@ -126,7 +110,7 @@ function _fh_cache(
   tspan = (ts[1], ts[end])
   nt = length(ts)
   alg = OrdinaryDiffEqVerner.Vern9()
-  opts = (; abstol, reltol, save_everystep = false, save_start = false, save_end = false)
+  opts = (; abstol, reltol, saveat = ts)
 
   prob2 = OrdinaryDiffEqVerner.ODEProblem(FH_ODE!, copy(u0), tspan, copy(xtrue))
   integ = OrdinaryDiffEqVerner.init(prob2, alg; opts...)
@@ -141,7 +125,7 @@ function _fh_cache(
   )
 
   # Synthetic data: with data = 0, F = [V(t); W(t)] at the true parameters.
-  _simulate!(c, integ, c.u0, c.buf2, xtrue, Val(false)) ||
+  _simulate!(c, integ, c.u0, c.buf2, xtrue) ||
     error("FitzHugh-Nagumo: integration failed at the true parameters")
   c.data .= reshape(c.F, nt, 2) .+ noise_level .* permutedims(reshape(randn(rng, 2nt), 2, nt))
   c.F_valid = false   # F currently holds the clean trajectory, not a residual
@@ -151,7 +135,6 @@ end
 # ---------------------------------------------------------------------------
 # NLPModels API
 # ---------------------------------------------------------------------------
-
 mutable struct FHNLPModel{T, S, C} <: AbstractNLPModel{T, S}
   meta::NLPModelMeta{T, S}
   counters::Counters
