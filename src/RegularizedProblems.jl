@@ -25,7 +25,7 @@ function __init__()
   end
   @require ADNLPModels = "54578032-b7ea-4c30-94aa-7cbd1cce6c9a" begin
     @require OrdinaryDiffEqVerner = "79d7bb75-1356-48c1-b8c0-6832512096c2" begin
-      @require ReverseDiff = "37e2e3b7-166d-5795-8a7a-e32c996b4267" begin
+      @require Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9" begin
         include("fh_model.jl")
         @require ProximalOperators = "a725b495-10eb-56fe-b38b-717eba820537" begin
           include("testset_fh.jl")

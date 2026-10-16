@@ -20,7 +20,6 @@ function FH_smooth_term(; abstol = 1e-14, reltol = 1e-14)
   prob = OrdinaryDiffEqVerner.ODEProblem(FH_ODE, u0, tspan, x0)
   alg = OrdinaryDiffEqVerner.Vern9()
   integrator = OrdinaryDiffEqVerner.init(prob, alg, abstol = abstol, reltol = reltol, p = p, saveat = savetime)
-  reverse_diff_integrator = OrdinaryDiffEqVerner.init(prob, alg, abstol = abstol, reltol = reltol, p = ReverseDiff.TrackedReal.(p, 0.0), saveat = savetime)
   OrdinaryDiffEqVerner.solve!(integrator)
 
 
@@ -29,10 +28,9 @@ function FH_smooth_term(; abstol = 1e-14, reltol = 1e-14)
   noise = collect(eachrow(noise))
   data = noise + integrator.sol.u
   temp = zeros(eltype(data[1]), length(data) * 2)
-  reverse_diff_temp = ReverseDiff.TrackedReal.(temp, 0.0)
 
   # define residual vector
-  function residual!(F, x :: AbstractVector{T}) where{T <: Real}
+  function residual!(F, x)
     OrdinaryDiffEqVerner.reinit!(integrator, u0)
     integrator.p .= x
     OrdinaryDiffEqVerner.solve!(integrator)
@@ -43,25 +41,9 @@ function FH_smooth_term(; abstol = 1e-14, reltol = 1e-14)
     return F
   end
 
-  function residual!(F, x :: AbstractVector{T}) where{T <: ReverseDiff.TrackedReal}
-    OrdinaryDiffEqVerner.reinit!(reverse_diff_integrator, u0)
-    reverse_diff_integrator.p .= x
-    OrdinaryDiffEqVerner.solve!(reverse_diff_integrator)
-    @inbounds for i in 1:length(reverse_diff_integrator.sol.u)
-      F[i] = reverse_diff_integrator.sol.u[i][1] - data[i][1]
-      F[i + length(reverse_diff_integrator.sol.u)] = reverse_diff_integrator.sol.u[i][2] - data[i][2]
-    end
-    return F
-  end
-
-  function obj(x :: AbstractVector{T}) where{T <: Real}
+  function obj(x)
     residual!(temp, x)
     return dot(temp, temp) / 2
-  end
-
-  function obj(x :: AbstractVector{T}) where{T <: ReverseDiff.TrackedReal}
-    residual!(reverse_diff_temp, x)
-    return dot(reverse_diff_temp, reverse_diff_temp) / 2
   end
 
   return data, residual!, obj, x0
@@ -94,17 +76,13 @@ function fh_model(; kwargs...)
   data, resid!, misfit, x0 = FH_smooth_term()
   nequ = 202
   nlp = ADNLPModels.ADNLPModel(misfit, ones(5); 
-    hessian_backend = ADNLPModels.ReverseDiffADHessian,
-    gradient_backend = ADNLPModels.ReverseDiffADGradient,
+    backend = :enzyme,
+    matrix_free = true,
     kwargs...
   )
   nls = ADNLPModels.ADNLSModel!(resid!, ones(5), nequ; 
-    jacobian_residual_backend = ADNLPModels.ReverseDiffADJacobian,
-    jprod_residual_backend = ADNLPModels.ReverseDiffADJprod, 
-    jtprod_residual_backend = ADNLPModels.ReverseDiffADJtprod,
-    hessian_backend = ADNLPModels.ReverseDiffADHessian,
-    hessian_residual_backend = ADNLPModels.ReverseDiffADHessian,
-    gradient_backend = ADNLPModels.ReverseDiffADGradient,
+    backend = :enzyme,
+    matrix_free = true,
     kwargs...
   )
   return nlp, nls, x0
