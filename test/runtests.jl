@@ -1,6 +1,5 @@
-using LinearAlgebra, Enzyme, Test
-using ADNLPModels,
-  LinearOperators,
+using LinearAlgebra, Test
+using LinearOperators,
   ManualNLPModels,
   MLDatasets,
   NLPModels,

@@ -1,89 +1,281 @@
 export fh_model, fh_nls_model
 
-function FH_smooth_term(; abstol = 1e-14, reltol = 1e-14)
-  # FH model = van-der-Pol oscillator when I = b = c = 0
-  # x' = μ(x - x^3/3 - y)
-  # y' = x/μ -> here μ = 12.5
-  function FH_ODE(dx, x, p, t)
-    V, W = x
-    I, μ, a, b, c = p
-    dx[1] = (V - V^3 / 3 - W + I) / μ
-    dx[2] = μ * (a * V - b * W + c)
+# ---------------------------------------------------------------------------
+# Right-hand sides.  p = (I, μ, a, b, c)
+# FH model = van der Pol oscillator when I = b = c = 0.
+# ---------------------------------------------------------------------------
+function FH_ODE!(du, u, p, t)
+  @inbounds begin
+    V, W = u[1], u[2]
+    I, μ, a, b, c = p[1], p[2], p[3], p[4], p[5]
+    du[1] = (V - V^3 / 3 - W + I) / μ
+    du[2] = μ * (a * V - b * W + c)
   end
+  return nothing
+end
 
-  u0 = [2.0; 0.0]
-  tspan = (0.0, 20.0)
-  savetime = 0.2
-
-  x0 = [0.0, 0.2, 1.0, 0.0, 0.0]
-  p = copy(x0)
-  prob = OrdinaryDiffEqVerner.ODEProblem(FH_ODE, u0, tspan, x0)
-  alg = OrdinaryDiffEqVerner.Vern9()
-  integrator = OrdinaryDiffEqVerner.init(prob, alg, abstol = abstol, reltol = reltol, p = p, saveat = savetime)
-  OrdinaryDiffEqVerner.solve!(integrator)
-
-
-  # add random noise to vdP solution
-  noise = 0.1 * randn(length(integrator.sol.u), 2)
-  noise = collect(eachrow(noise))
-  data = noise + integrator.sol.u
-  temp = zeros(eltype(data[1]), length(data) * 2)
-
-  # define residual vector
-  function residual!(F, x)
-    OrdinaryDiffEqVerner.reinit!(integrator, u0)
-    integrator.p .= x
-    OrdinaryDiffEqVerner.solve!(integrator)
-    @inbounds for i in 1:length(integrator.sol.u)
-      F[i] = integrator.sol.u[i][1] - data[i][1]
-      F[i + length(integrator.sol.u)] = integrator.sol.u[i][2] - data[i][2]
+# Forward sensitivity system, z = [V, W, ∂V/∂p₁, ∂W/∂p₁, …, ∂V/∂p₅, ∂W/∂p₅]:
+#   u' = f(u, p),   S' = (∂f/∂u) S + ∂f/∂p,   S(0) = 0.
+# One solve of this 12-state system gives F(x) and the full 202×5 Jacobian.
+function FH_sens!(dz, z, p, t)
+  @inbounds begin
+    V, W = z[1], z[2]
+    I, μ, a, b, c = p[1], p[2], p[3], p[4], p[5]
+    g1 = V - V^3 / 3 - W + I
+    g2 = a * V - b * W + c
+    dz[1] = g1 / μ
+    dz[2] = μ * g2
+    # ∂f/∂u
+    j11 = (1 - V^2) / μ
+    j12 = -1 / μ
+    j21 = μ * a
+    j22 = -μ * b
+    # ∂f/∂p, one entry per parameter (I, μ, a, b, c)
+    o = zero(V)
+    q1 = (1 / μ, -g1 / μ^2, o, o, o)
+    q2 = (o, g2, μ * V, -μ * W, μ)
+    for k in 1:5
+      sV = z[2k + 1]
+      sW = z[2k + 2]
+      dz[2k + 1] = j11 * sV + j12 * sW + q1[k]
+      dz[2k + 2] = j21 * sV + j22 * sW + q2[k]
     end
-    return F
   end
+  return nothing
+end
 
-  function obj(x)
-    residual!(temp, x)
-    return dot(temp, temp) / 2
+# ---------------------------------------------------------------------------
+# Shared cache: integrators, data, and the last F / J keyed on x.
+# ---------------------------------------------------------------------------
+
+mutable struct FHCache{T, I2, I12}
+  integ::I2           # 2-state integrator (residual only)
+  sinteg::I12         # 12-state integrator (residual + Jacobian)
+  u0::Vector{T}
+  z0::Vector{T}
+  ts::Vector{T}       # observation times
+  data::Matrix{T}     # nt × 2
+  buf2::Vector{T}
+  buf12::Vector{T}
+  F::Vector{T}        # 2nt,  F[k] ↔ V(t_k),  F[nt + k] ↔ W(t_k)
+  J::Matrix{T}        # 2nt × 5
+  xF::Vector{T}
+  xJ::Vector{T}
+  F_ok::Bool
+  J_ok::Bool
+  F_success::Bool
+  J_success::Bool
+end
+
+@inline function _record!(c::FHCache, k, u, ::Val{false})
+  nt = length(c.ts)
+  @inbounds begin
+    c.F[k] = u[1] - c.data[k, 1]
+    c.F[k + nt] = u[2] - c.data[k, 2]
   end
+  return nothing
+end
 
-  return data, residual!, obj, x0
+@inline function _record!(c::FHCache, k, z, ::Val{true})
+  _record!(c, k, z, Val(false))
+  nt = length(c.ts)
+  @inbounds for j in 1:5
+    c.J[k, j] = z[2j + 1]
+    c.J[k + nt, j] = z[2j + 2]
+  end
+  return nothing
+end
+
+# Integrate with parameters x and record the solution at every c.ts[k].
+# No `saveat`: we step manually and use the integrator's in-place dense output
+# (the same interpolation `saveat` uses), so nothing is pushed into sol.u.
+function _simulate!(c::FHCache, integ, uinit, buf, x, sens::Val)
+  copyto!(integ.p, x)                       # must happen BEFORE reinit!, which evaluates f
+  OrdinaryDiffEqVerner.reinit!(integ, uinit)
+  ts = c.ts
+  nt = length(ts)
+  copyto!(buf, uinit)
+  _record!(c, 1, buf, sens)
+  k = 2
+  while k <= nt
+    OrdinaryDiffEqVerner.step!(integ)
+    OrdinaryDiffEqVerner.check_error(integ) == OrdinaryDiffEqVerner.ReturnCode.Success || return false
+    while k <= nt && ts[k] <= integ.t
+      integ(buf, ts[k])                     # in-place interpolation, no allocation
+      _record!(c, k, buf, sens)
+      k += 1
+    end
+  end
+  return true
+end
+
+function _update_F!(c::FHCache, x)
+  (c.F_ok && x == c.xF) && return c.F_success
+  ok = _simulate!(c, c.integ, c.u0, c.buf2, x, Val(false))
+  ok || fill!(c.F, NaN)
+  copyto!(c.xF, x)
+  c.F_ok = true
+  c.F_success = ok
+  return ok
+end
+
+function _update_J!(c::FHCache, x)
+  (c.J_ok && x == c.xJ) && return c.J_success
+  ok = _simulate!(c, c.sinteg, c.z0, c.buf12, x, Val(true))   # also refreshes F
+  if !ok
+    fill!(c.F, NaN)
+    fill!(c.J, NaN)
+  end
+  copyto!(c.xJ, x)
+  copyto!(c.xF, x)
+  c.J_ok = c.F_ok = true
+  c.J_success = c.F_success = ok
+  return ok
+end
+
+function _fh_cache(
+  xtrue::Vector{Float64};
+  rng::Random.AbstractRNG = Random.default_rng(),
+  noise_level = 0.1,
+  abstol = 1e-14,
+  reltol = 1e-14,
+  u0 = [2.0, 0.0],
+  tf = 20.0,
+  savetime = 0.2,
+)
+  T = Float64
+  ts = collect(T, range(zero(T), tf; step = savetime))
+  tspan = (ts[1], ts[end])
+  nt = length(ts)
+  alg = OrdinaryDiffEqVerner.Vern9()
+  opts = (; abstol, reltol, save_everystep = false, save_start = false, save_end = false)
+
+  prob2 = OrdinaryDiffEqVerner.ODEProblem(FH_ODE!, copy(u0), tspan, copy(xtrue))
+  integ = OrdinaryDiffEqVerner.init(prob2, alg; opts...)
+  z0 = [u0; zeros(T, 10)]
+  prob12 = OrdinaryDiffEqVerner.ODEProblem(FH_sens!, copy(z0), tspan, copy(xtrue))
+  sinteg = OrdinaryDiffEqVerner.init(prob12, alg; opts...)
+
+  c = FHCache(
+    integ, sinteg, copy(u0), z0, ts, zeros(T, nt, 2), zeros(T, 2), zeros(T, 12),
+    zeros(T, 2nt), zeros(T, 2nt, 5), fill(T(NaN), 5), fill(T(NaN), 5),
+    false, false, false, false,
+  )
+
+  # Synthetic data: with data = 0, F = [V(t); W(t)] at the true parameters.
+  _simulate!(c, integ, c.u0, c.buf2, xtrue, Val(false)) ||
+    error("FitzHugh-Nagumo: integration failed at the true parameters")
+  c.data .= reshape(c.F, nt, 2) .+ noise_level .* permutedims(reshape(randn(rng, 2nt), 2, nt))
+  c.F_ok = false   # F currently holds the clean trajectory, not a residual
+  return c
+end
+
+# ---------------------------------------------------------------------------
+# NLPModels API
+# ---------------------------------------------------------------------------
+
+mutable struct FHNLPModel{T, S, C} <: AbstractNLPModel{T, S}
+  meta::NLPModelMeta{T, S}
+  counters::Counters
+  cache::C
+end
+
+mutable struct FHNLSModel{T, S, C} <: AbstractNLSModel{T, S}
+  meta::NLPModelMeta{T, S}
+  nls_meta::NLSMeta{T, S}
+  counters::NLSCounters
+  cache::C
+end
+
+for M in (:FHNLPModel, :FHNLSModel)
+  @eval begin
+    function NLPModels.obj(m::$M{T}, x::AbstractVector) where {T}
+      NLPModels.@lencheck m.meta.nvar x
+      NLPModels.increment!(m, :neval_obj)
+      c = m.cache
+      _update_F!(c, x) || return T(Inf)
+      return dot(c.F, c.F) / 2
+    end
+
+    function NLPModels.grad!(m::$M, x::AbstractVector, g::AbstractVector)
+      NLPModels.@lencheck m.meta.nvar x g
+      NLPModels.increment!(m, :neval_grad)
+      c = m.cache
+      _update_J!(c, x)
+      _update_F!(c, x)              # no-op unless F was overwritten at another x
+      mul!(g, c.J', c.F)            # ∇f = Jᵀ F
+      return g
+    end
+  end
+end
+
+function NLPModels.residual!(nls::FHNLSModel, x::AbstractVector, Fx::AbstractVector)
+  NLPModels.@lencheck nls.meta.nvar x
+  NLPModels.@lencheck nls.nls_meta.nequ Fx
+  NLPModels.increment!(nls, :neval_residual)
+  _update_F!(nls.cache, x)
+  copyto!(Fx, nls.cache.F)
+  return Fx
+end
+
+function NLPModels.jprod_residual!(
+  nls::FHNLSModel,
+  x::AbstractVector,
+  v::AbstractVector,
+  Jv::AbstractVector,
+)
+  NLPModels.@lencheck nls.meta.nvar x v
+  NLPModels.@lencheck nls.nls_meta.nequ Jv
+  NLPModels.increment!(nls, :neval_jprod_residual)
+  _update_J!(nls.cache, x)
+  mul!(Jv, nls.cache.J, v)
+  return Jv
+end
+
+function NLPModels.jtprod_residual!(
+  nls::FHNLSModel,
+  x::AbstractVector,
+  v::AbstractVector,
+  Jtv::AbstractVector,
+)
+  NLPModels.@lencheck nls.meta.nvar x Jtv
+  NLPModels.@lencheck nls.nls_meta.nequ v
+  NLPModels.increment!(nls, :neval_jtprod_residual)
+  _update_J!(nls.cache, x)
+  mul!(Jtv, nls.cache.J', v)
+  return Jtv
 end
 
 """
-    fh_model(; kwargs...)
+    nlp, nls, xtrue = fh_model(; x0 = ones(5), rng = Random.default_rng(), kwargs...)
 
-Return an instance of an `NLPModel` and an instance of an `NLSModel` representing
-the same Fitzhugh-Nagumo problem, i.e., the over-determined nonlinear
-least-squares objective
+Return an `NLPModel` and an `NLSModel` representing the same Fitzhugh-Nagumo problem,
+i.e., the over-determined nonlinear least-squares objective
 
    ½ ‖F(x)‖₂²,
 
-where F: ℝ⁵ → ℝ²⁰² represents the fitting error between a simulation of the
-Fitzhugh-Nagumo model with parameters x and a simulation of the Van der Pol
-oscillator with fixed, but unknown, parameters.
+where F: ℝ⁵ → ℝ²⁰² is the fitting error between a simulation of the Fitzhugh-Nagumo
+model with parameters x and noisy observations of a Van der Pol oscillator with fixed,
+but unknown, parameters `xtrue`.
 
-## Keyword Arguments
+Derivatives are exact (up to integration tolerance): F and its Jacobian are obtained in
+a single solve of the forward-sensitivity system and cached for the last `x`, so repeated
+`grad!`, `jprod_residual!` and `jtprod_residual!` calls at the same `x` cost one 202×5
+matrix-vector product. Both models share the cache (not thread-safe).
 
-All keyword arguments are passed directly to the `ADNLPModel` (or `ADNLSModel`)
-constructor.
-
-## Return Value
-
-An instance of an `ADNLPModel` that represents the Fitzhugh-Nagumo problem, an instance
-of an `ADNLSModel` that represents the same problem, and the exact solution.
+Keyword arguments other than `x0` and `name` (`rng`, `noise_level`, `abstol`, `reltol`,
+`u0`, `tf`, `savetime`) configure the simulation.
 """
-function fh_model(; kwargs...)
-  data, resid!, misfit, x0 = FH_smooth_term()
-  nequ = 202
-  nlp = ADNLPModels.ADNLPModel(misfit, ones(5); 
-    backend = :enzyme,
-    matrix_free = true,
-    kwargs...
+function fh_model(; x0 = ones(5), name = "Fitzhugh-Nagumo", kwargs...)
+  xtrue = [0.0, 0.2, 1.0, 0.0, 0.0]
+  c = _fh_cache(xtrue; kwargs...)
+  nequ = length(c.F)
+  nlp = FHNLPModel(NLPModelMeta(5; x0 = copy(x0), name = name), Counters(), c)
+  nls = FHNLSModel(
+    NLPModelMeta(5; x0 = copy(x0), name = name * "-LS"),
+    NLSMeta(nequ, 5; x0 = copy(x0)),
+    NLSCounters(),
+    c,
   )
-  nls = ADNLPModels.ADNLSModel!(resid!, ones(5), nequ; 
-    backend = :enzyme,
-    matrix_free = true,
-    kwargs...
-  )
-  return nlp, nls, x0
+  return nlp, nls, xtrue
 end

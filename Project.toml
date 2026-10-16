@@ -16,10 +16,8 @@ Requires = "ae029012-a4dd-5104-9daa-d747884805df"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [compat]
-ADNLPModels = "0.8.10"
 DataStructures = "0.19.6"
 Distributions = "0.25"
-Enzyme = "0.13.216"
 LinearOperators = "2.11.0"
 ManualNLPModels = "0.2"
 MathOptInterface = "1"
@@ -34,9 +32,7 @@ ShiftedProximalOperators = "0.2"
 julia = "^1.6.0"
 
 [extras]
-ADNLPModels = "54578032-b7ea-4c30-94aa-7cbd1cce6c9a"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
-Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
 LinearOperators = "5c8ed15e-5a4c-59e4-a42b-c7e8811fb125"
 MathOptInterface = "b8f27783-ece8-5eb3-8dc8-9495eed66fee"
 MLDatasets = "eb30cadb-4394-5ae3-aed4-317e484a6458"
@@ -49,8 +45,6 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
 test = [
-  "ADNLPModels", 
-  "Enzyme", 
   "LinearOperators", 
   "MathOptInterface", 
   "MLDatasets", 
