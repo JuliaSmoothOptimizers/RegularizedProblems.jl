@@ -1,53 +1,36 @@
 export fh_model, fh_nls_model
 
-# ---------------------------------------------------------------------------
 # Right-hand sides.  p = (I, μ, a, b, c)
 # FH model = van der Pol oscillator when I = b = c = 0.
-# ---------------------------------------------------------------------------
-function FH_ODE!(du, u, p, t)
-  @inbounds begin
-    V, W = u[1], u[2]
-    I, μ, a, b, c = p[1], p[2], p[3], p[4], p[5]
-    du[1] = (V - V^3 / 3 - W + I) / μ
-    du[2] = μ * (a * V - b * W + c)
-  end
-  return nothing
+function FH_ODE!(dx, x, p, t)
+  V, W = x[1], x[2]
+  I, μ, a, b, c = p
+  dx[1] = (V - V^3 / 3 - W + I) / μ
+  dx[2] = μ * (a * V - b * W + c)
 end
 
-# Forward sensitivity system, z = [V, W, ∂V/∂p₁, ∂W/∂p₁, …, ∂V/∂p₅, ∂W/∂p₅]:
+# Forward sensitivity system, x = [V, W, ∂V/∂p₁, ∂W/∂p₁, …, ∂V/∂p₅, ∂W/∂p₅]:
 #   u' = f(u, p),   S' = (∂f/∂u) S + ∂f/∂p,   S(0) = 0.
 # One solve of this 12-state system gives F(x) and the full 202×5 Jacobian.
 function FH_sens!(dz, z, p, t)
-  @inbounds begin
-    V, W = z[1], z[2]
-    I, μ, a, b, c = p[1], p[2], p[3], p[4], p[5]
-    g1 = V - V^3 / 3 - W + I
-    g2 = a * V - b * W + c
-    dz[1] = g1 / μ
-    dz[2] = μ * g2
-    # ∂f/∂u
-    j11 = (1 - V^2) / μ
-    j12 = -1 / μ
-    j21 = μ * a
-    j22 = -μ * b
-    # ∂f/∂p, one entry per parameter (I, μ, a, b, c)
-    o = zero(V)
-    q1 = (1 / μ, -g1 / μ^2, o, o, o)
-    q2 = (o, g2, μ * V, -μ * W, μ)
-    for k in 1:5
-      sV = z[2k + 1]
-      sW = z[2k + 2]
-      dz[2k + 1] = j11 * sV + j12 * sW + q1[k]
-      dz[2k + 2] = j21 * sV + j22 * sW + q2[k]
-    end
+  V, W = z[1], z[2]
+  I, μ, a, b, c = p
+  FH_ODE!(view(dz, 1:2), view(z, 1:2), p, t)  # compute the first two entries of dz
+  # ∂f/∂u
+  j11, j12 = (1 - V^2) / μ, -1 / μ
+  j21, j22   = μ * a, -μ * b
+  # ∂f/∂p, one entry per parameter (I, μ, a, b, c)
+  q1 = (1 / μ, -dz[1] / μ, zero(V), zero(V), zero(V))
+  q2 = (zero(V), dz[2] / μ, μ * V, -μ * W, μ)
+  for k in 1:5
+    dz[2k + 1] = j11 * z[2k + 1] + j12 * z[2k + 2] + q1[k]
+    dz[2k + 2] = j21 * z[2k + 1] + j22 * z[2k + 2] + q2[k]
   end
-  return nothing
 end
 
 # ---------------------------------------------------------------------------
 # Shared cache: integrators, data, and the last F / J keyed on x.
 # ---------------------------------------------------------------------------
-
 mutable struct FHCache{T, I2, I12}
   integ::I2           # 2-state integrator (residual only)
   sinteg::I12         # 12-state integrator (residual + Jacobian)
@@ -59,10 +42,10 @@ mutable struct FHCache{T, I2, I12}
   buf12::Vector{T}
   F::Vector{T}        # 2nt,  F[k] ↔ V(t_k),  F[nt + k] ↔ W(t_k)
   J::Matrix{T}        # 2nt × 5
-  xF::Vector{T}
-  xJ::Vector{T}
-  F_ok::Bool
-  J_ok::Bool
+  xF::Vector{T}       # last x for which F is valid
+  xJ::Vector{T}       # last x for which J is valid
+  F_valid::Bool
+  J_valid::Bool
   F_success::Bool
   J_success::Bool
 end
@@ -73,7 +56,6 @@ end
     c.F[k] = u[1] - c.data[k, 1]
     c.F[k + nt] = u[2] - c.data[k, 2]
   end
-  return nothing
 end
 
 @inline function _record!(c::FHCache, k, z, ::Val{true})
@@ -83,14 +65,11 @@ end
     c.J[k, j] = z[2j + 1]
     c.J[k + nt, j] = z[2j + 2]
   end
-  return nothing
 end
 
 # Integrate with parameters x and record the solution at every c.ts[k].
-# No `saveat`: we step manually and use the integrator's in-place dense output
-# (the same interpolation `saveat` uses), so nothing is pushed into sol.u.
 function _simulate!(c::FHCache, integ, uinit, buf, x, sens::Val)
-  copyto!(integ.p, x)                       # must happen BEFORE reinit!, which evaluates f
+  copyto!(integ.p, x)
   OrdinaryDiffEqVerner.reinit!(integ, uinit)
   ts = c.ts
   nt = length(ts)
@@ -110,27 +89,26 @@ function _simulate!(c::FHCache, integ, uinit, buf, x, sens::Val)
 end
 
 function _update_F!(c::FHCache, x)
-  (c.F_ok && x == c.xF) && return c.F_success
-  ok = _simulate!(c, c.integ, c.u0, c.buf2, x, Val(false))
-  ok || fill!(c.F, NaN)
+  (c.F_valid && x == c.xF) && return c.F_success
+  sim_success = _simulate!(c, c.integ, c.u0, c.buf2, x, Val(false))
+  sim_success || fill!(c.F, NaN)
   copyto!(c.xF, x)
-  c.F_ok = true
-  c.F_success = ok
-  return ok
+  c.F_valid, c.F_success = true, sim_success
+  return c.F_success
 end
 
 function _update_J!(c::FHCache, x)
-  (c.J_ok && x == c.xJ) && return c.J_success
-  ok = _simulate!(c, c.sinteg, c.z0, c.buf12, x, Val(true))   # also refreshes F
-  if !ok
+  (c.J_valid && x == c.xJ) && return c.J_success
+  sim_success = _simulate!(c, c.sinteg, c.z0, c.buf12, x, Val(true))   # also refreshes F
+  if !sim_success
     fill!(c.F, NaN)
     fill!(c.J, NaN)
   end
   copyto!(c.xJ, x)
   copyto!(c.xF, x)
-  c.J_ok = c.F_ok = true
-  c.J_success = c.F_success = ok
-  return ok
+  c.J_valid, c.F_valid = true, true
+  c.J_success, c.F_success = sim_success, sim_success
+  return c.J_success
 end
 
 function _fh_cache(
@@ -166,7 +144,7 @@ function _fh_cache(
   _simulate!(c, integ, c.u0, c.buf2, xtrue, Val(false)) ||
     error("FitzHugh-Nagumo: integration failed at the true parameters")
   c.data .= reshape(c.F, nt, 2) .+ noise_level .* permutedims(reshape(randn(rng, 2nt), 2, nt))
-  c.F_ok = false   # F currently holds the clean trajectory, not a residual
+  c.F_valid = false   # F currently holds the clean trajectory, not a residual
   return c
 end
 
