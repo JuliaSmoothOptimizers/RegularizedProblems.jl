@@ -1,4 +1,5 @@
-export mat_rand, random_matrix_completion_model, random_matrix_completion_eq_model, MIT_matrix_completion_model
+export random_matrix_completion_model, MIT_matrix_completion_model
+export random_matrix_completion_eq_model
 
 function mat_rand(m::Int, n::Int, r::Int, sr::Float64, va::Float64, vb::Float64, c::Float64)
   xl = rand(Uniform(-0.1, 0.3), m, r)
@@ -122,60 +123,51 @@ end
 """
     model, sol = random_matrix_completion_eq_model(; kwargs...)
 
-Return an instance of an `NLPModel` representing the equality-constrained 
-matrix completion problem in forward mode, i.e., the linear constraint
+Return an instance of an `NLPModel` representing the equality-constrained matrix completion
+problem, i.e., the feasibility problem
 
-`` X_{ij} = A_{ij} \\ \\forall i,j \\in E, ``
+    find X  s.t.  Xᵢⱼ = Aᵢⱼ  for all (i, j) ∈ Ω,
 
-where `` E \\subseteq \\mathbb{R}^m \\times \\mathbb{R}^n ``.
-Alternatively, one can also represent the equality-constrained 
-matrix completion problem in backward mode, i.e, the optimization problem
-
-`` \\min_{\\sigma, U, V} 0 \\quad \\text{s.t.} \\ U^T U = I, \\ V^T V = I, \\ \\sum_k \\sigma_k u_k^i v_k^j = A_{ij}.``
-
-where `` \\sigma \\in \\mathbb{R}^l ``, `` U \\in \\mathbb{R}^m \\times \\mathbb{R}^l `` and 
-`` V \\in \\mathbb{R}^l \\times \\mathbb{R}^n `` with `` l \\coloneqq \\min\\{m, n\\} ``.
+where X is the unknown m × n matrix, A is a fixed random matrix of rank r, and Ω is the set
+of observed entries.
+The objective is zero; the intent is to regularize the model with a rank-type regularizer.
 
 ## Keyword Arguments
 
-* `m :: Int = 100`: the number of rows of X and A;
-* `n :: Int = 100`: the number of columns of X and A;
-* `r :: Int = 5`: the desired rank of A;
-* `sr :: Float64 = 0.8`: a threshold between 0 and 1 used to determine the set of pixels retained by the operator P;
-* `mode :: Symbol = :forward`: either `:forward` or `:backward`, represents which form of the equality constrained matrix completion problem is to be represented (see above);
-* `init :: Symbol = :spectral`: the initial guess stored in `model.meta.x0` (see below).
+* `m :: Int`: the number of rows of X and A (default: 100);
+* `n :: Int`: the number of columns of X and A (default: 100);
+* `r :: Int`: the desired rank of A (default: 5);
+* `sr :: Float64`: a threshold between 0 and 1 used to determine the set Ω of observed entries (default: 0.8);
+* `init :: Symbol`: the initial guess stored in `model.meta.x0` (default: `:spectral`, see below).
 
 ## Initial guess
 
-Let `` P_\\Omega(A) `` denote the matrix of observed entries, with zeros elsewhere,
-and `` p = |\\Omega| / (mn) `` the sampling rate.
-In backward mode, the initial guess is given in factored form `` (U, \\sigma, V) ``, from a thin SVD.
+Let P_Ω(A) denote the matrix of observed entries, with zeros elsewhere,
+and p = |Ω| / (mn) the sampling rate.
 
-* `:spectral`: the best rank-`r` approximation of `` P_\\Omega(A) / p `` (spectral initialization).
-  It is infeasible, but close to the solution with high probability. In backward mode, `` U `` and `` V `` are orthonormal and the last `` l - r `` entries of `` \\sigma `` are zero;
-* `:feasible`: `` P_\\Omega(A) `` itself, which satisfies all the constraints but generically has full rank;
-* `:zero`: the zero vector. Beware that in forward mode, `` X = 0 `` is a local minimizer of `` \\mathrm{rank}(X) + \\tau \\|c(X)\\| `` for any `` \\tau ``,
-  and that in backward mode, the Jacobian of the constraints vanishes at zero, so that gradient-based methods cannot leave this point.
+* `:spectral`: the best rank-`r` approximation of P_Ω(A) / p (spectral initialization).
+  It is infeasible, but close to the solution with high probability;
+* `:feasible`: P_Ω(A) itself, which satisfies all the constraints but generically has full rank;
+* `:zero`: the zero matrix. Beware that X = 0 is a local minimizer of rank(X) + τ ‖c(X)‖ for any τ.
 
 ## Return Value
 
-An instance of an `NLPModel` representing the
-equality constrained matrix completion problem, and the exact solution.
+An instance of an `NLPModel` representing the equality-constrained matrix completion problem,
+and the exact solution vec(A).
 """
 function random_matrix_completion_eq_model(;
   m::Int = 100,
   n::Int = 100,
   r::Int = 5,
   sr::Float64 = 0.8,
-  mode::Symbol = :forward,
   init::Symbol = :spectral,
 )
   xs, B, ω = mat_rand(m, n, r, sr, 0.0, 0.0, 0.0)
-  return random_matrix_completion_eq_model(xs, B, ω, mode = mode, init = init, r = r)
+  return random_matrix_completion_eq_model(xs, B, ω; init = init, r = r)
 end
 
 """
-    model, sol = random_matrix_completion_eq_model(xs, B, ω; mode = :forward, init = :spectral, r = min(size(xs)...))
+    model, sol = random_matrix_completion_eq_model(xs, B, ω; init = :spectral, r = min(size(xs)...))
 
 Same as above for given data, where `B` contains the observed entries of `xs` and `ω` their
 column-major linear indices.
@@ -185,155 +177,50 @@ function random_matrix_completion_eq_model(
   xs,
   B,
   ω;
-  mode::Symbol = :forward,
   init::Symbol = :spectral,
   r::Int = min(size(xs)...),
 )
-  mode ∈ (:forward, :backward) ||
-    throw(ArgumentError("unknown mode :$mode; choose :forward or :backward"))
-  m, n = size(xs)
-  U0, σ0, Vt0 = matrix_completion_initial_guess(m, n, B, ω; init = init, r = r)
-  return mode == :forward ? random_matrix_completion_eq_model_forward(xs, B, ω, U0, σ0, Vt0) :
-         random_matrix_completion_eq_model_backward(xs, B, ω, U0, σ0, Vt0)
-end
-
-# Initial guess for the equality-constrained matrix completion problem,
-# returned as thin SVD factors (U, σ, Vt) of an m × n matrix, with l = min(m, n) components.
-# See the docstring of random_matrix_completion_eq_model for the available choices of init.
-function matrix_completion_initial_guess(m, n, B, ω; init::Symbol = :spectral, r::Int = min(m, n))
   init ∈ (:spectral, :feasible, :zero) ||
     throw(ArgumentError("unknown init :$init; choose :spectral, :feasible or :zero"))
-  T = eltype(B)
-  l = min(m, n)
-  init == :zero && return zeros(T, m, l), zeros(T, l), zeros(T, l, n)
-
-  Y = zeros(T, m, n)
-  Y[ω] .= B                             # P_Ω(A)
-  init == :spectral && (Y ./= length(ω) / (m * n))
-  F = svd(Y)
-  σ = copy(F.S)
-  init == :spectral && (σ[(clamp(r, 0, l) + 1):end] .= 0)
-  return Matrix(F.U), σ, Matrix(F.Vt)
-end
-
-function random_matrix_completion_eq_model_forward(xs, B, ω, U0, σ0, Vt0)
-
   m, n = size(xs)
-  xs = collect(vec(xs))
-  x0 = vec(U0 * Diagonal(σ0) * Vt0)
+  T = eltype(B)
 
-  # Constrained API
-  function cons!(cx, x)
-    @views cx .= x[ω] .- B
+  x0 = zeros(T, m * n)
+  if init != :zero
+    x0[ω] .= B  # P_Ω(A)
+  end
+  if init == :spectral
+    F = svd(reshape(x0, m, n) ./ (length(ω) / (m * n)))
+    k = clamp(r, 0, min(m, n))
+    x0 .= vec(F.U[:, 1:k] * Diagonal(F.S[1:k]) * F.Vt[1:k, :])
   end
 
-  function jprod!(jv, x, v)
-    @views jv .= v[ω]
-  end
-
+  cons!(cx, x) = (cx .= view(x, ω) .- B)
+  jprod!(jv, x, v) = (jv .= view(v, ω))
   function jtprod!(jtv, x, v)
     jtv .= 0
-    @views jtv[ω] .= v
+    jtv[ω] .= v
+    return jtv
   end
+  jac_coord!(vals, x) = fill!(vals, one(T))
 
-  function hprod!(hv, x, y, v; obj_weight = 1.0)
-    return hv .= 0
-  end
-
-  function hess_coord!(vals, x, y; obj_weight = 1.0)
-    return zeros(Float64, 0)
-  end
-
-  rows_jac = collect(1:length(ω))
-  cols_jac = ω
-
-  function jac_coord!(vals, x)
-    vals .= 1
-  end
-
-  # Unconstrained API
-  function obj(x)
-    return 0.0
-  end
-
-  function grad!(g, x)
-    g .= 0
-  end
-
-  function hprod!(hv, x, v; obj_weight = 1.0)
-    return hv .= 0
-  end
-
-  function hess_coord!(vals, x; obj_weight = 1.0)
-    return zeros(Float64, 0)
-  end
+  # The objective is zero and the constraints are linear, so all Hessians vanish.
+  obj(x) = zero(T)
+  grad!(g, x) = fill!(g, zero(T))
+  hprod!(hv, x, args...; obj_weight = one(T)) = fill!(hv, zero(T))
+  hess_coord!(vals, x, args...; obj_weight = one(T)) = vals
 
   nlp = NLPModel(
     x0,
-    obj, 
+    obj,
     grad = grad!,
     hprod = hprod!,
-    hess_coord = (zeros(Float64, 0), zeros(Float64, 0), hess_coord!),
+    hess_coord = (Int[], Int[], hess_coord!),
     cons = (cons!, zero(B), zero(B)),
     jprod = jprod!,
     jtprod = jtprod!,
-    jac_coord = (rows_jac, cols_jac, jac_coord!)
+    jac_coord = (collect(1:length(ω)), collect(Int, ω), jac_coord!),
+    meta_args = (name = "MATRAND-EQ",),
   )
-
-  return nlp, xs
-
+  return nlp, collect(vec(xs))
 end
-
-function random_matrix_completion_eq_model_backward(xs, B, ω, U0, σ0, Vt0)
-  m, n = size(xs)
-  l = min(m, n)
-  xs_svd = svd(xs)
-  xs = collect(vcat(vec(xs_svd.U), xs_svd.S, vec(xs_svd.Vt)))
-
-  # Constrained API
-  function c!(cx, x)
-    U = @views reshape(x[1:m*l], m, l)
-    σ = @views x[m*l + 1 : m*l + l]
-    V = @views reshape(x[m*l + l + 1:end], l, n)  # V stores Vᵀ, as in xs
-
-    n_entries_l = Int(l*(l+1)/2)
-
-    @inbounds for i = 1:l
-      @inbounds for j = 1:i
-        cx_idx = Int(j + i*(i-1)/2)
-        if i == j
-          @views cx[cx_idx] = dot(U[:, i], U[:, j]) - 1
-          @views cx[n_entries_l + cx_idx] = dot(V[i, :], V[j, :]) - 1
-        else
-          @views cx[cx_idx] = dot(U[:, i], U[:, j])
-          @views cx[n_entries_l + cx_idx] = dot(V[i, :], V[j, :])
-        end
-      end
-    end
-
-    offset = 2*n_entries_l
-    @inbounds for i in eachindex(ω)
-      i_idx, j_idx = Tuple(CartesianIndices((m, n))[ω[i]])
-      cx[offset + i] = - B[i]
-      @inbounds for j = 1:l
-        cx[offset + i] += σ[j]*U[i_idx, j]*V[j, j_idx]
-      end
-    end    
-  end
-
-
-  # Unconstrained API
-  function obj(x)
-    return 0.0
-  end
-  x0 = collect(vcat(vec(U0), σ0, vec(Vt0)))
-  ncon = l*(l+1) + length(B)
-  return ADNLPModels.ADNLPModel!(
-    obj,
-    x0,
-    c!,
-    zeros(ncon),
-    zeros(ncon)
-  ), xs
-end
-
