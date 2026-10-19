@@ -145,12 +145,16 @@ end
   @test 0 < model.meta.ncon < 100 * 100
   @test norm(cons(model, sol)) ≤ 1e-12
 
-  # Compare with an ADNLPModel
+  # Compare with an ADNLPModel on a small instance.
+  # Use a fresh model so that its counters start at zero, like those of the ADNLPModel,
+  # and keep n small since consistent_nlps allocates dense n × n work arrays.
+  xs_c, B_c, ω_c = RegularizedProblems.mat_rand(30, 30, 3, 0.8, 0.0, 0.0, 0.0)
+  model_c, _ = random_matrix_completion_eq_model(xs_c, B_c, ω_c)
   f(x) = zero(eltype(x))
-  c(x) = x[ω] - B
-  ad_model = ADNLPModel(f, model.meta.x0, c, zero(B), zero(B))
+  c(x) = x[ω_c] - B_c
+  ad_model = ADNLPModel(f, model_c.meta.x0, c, zero(B_c), zero(B_c))
   consistent_nlps(
-    [model, ad_model],
+    [model_c, ad_model],
     exclude = [hess, hess_coord, jth_hess, jth_hess_coord, jth_hprod, ghjvprod],
     test_derivative = false,
   )
