@@ -1,4 +1,5 @@
 export random_matrix_completion_model, MIT_matrix_completion_model
+export random_matrix_completion_eq_model
 
 function mat_rand(m::Int, n::Int, r::Int, sr::Float64, va::Float64, vb::Float64, c::Float64)
   xl = rand(Uniform(-0.1, 0.3), m, r)
@@ -6,10 +7,10 @@ function mat_rand(m::Int, n::Int, r::Int, sr::Float64, va::Float64, vb::Float64,
   xs = xl * xr'
   Ω = findall(<(sr), rand(m, n))
   B = xs[Ω]
-  B = (1 - c) * add_gauss(B, va, 0; clip = true) + c * add_gauss(B, vb, 0; clip = true)
+  B = (1 - c) * add_gauss(B, va, 0; clip = false) + c * add_gauss(B, vb, 0; clip = false)
   ω = zeros(Int64, size(Ω, 1))   # Vectorize Omega
   for i = 1:size(Ω, 1)
-    ω[i] = Ω[i][1] + size(Ω, 2) * (Ω[i][2] - 1)
+    ω[i] = Ω[i][1] + m * (Ω[i][2] - 1)
   end
   return xs, B, ω
 end
@@ -117,4 +118,109 @@ function MIT_matrix_completion_model()
 
   X, B, ω = perturb(I, 0.8, 0.8)
   matrix_completion_model(X, B, ω)
+end
+
+"""
+    model, sol = random_matrix_completion_eq_model(; kwargs...)
+
+Return an instance of an `NLPModel` representing the equality-constrained matrix completion
+problem, i.e., the feasibility problem
+
+    find X  s.t.  Xᵢⱼ = Aᵢⱼ  for all (i, j) ∈ Ω,
+
+where X is the unknown m × n matrix, A is a fixed random matrix of rank r, and Ω is the set
+of observed entries.
+The objective is zero; the intent is to regularize the model with a rank-type regularizer.
+
+## Keyword Arguments
+
+* `m :: Int`: the number of rows of X and A (default: 100);
+* `n :: Int`: the number of columns of X and A (default: 100);
+* `r :: Int`: the desired rank of A (default: 5);
+* `sr :: Float64`: a threshold between 0 and 1 used to determine the set Ω of observed entries (default: 0.8);
+* `init :: Symbol`: the initial guess stored in `model.meta.x0` (default: `:spectral`, see below).
+
+## Initial guess
+
+Let P_Ω(A) denote the matrix of observed entries, with zeros elsewhere,
+and p = |Ω| / (mn) the sampling rate.
+
+* `:spectral`: the best rank-`r` approximation of P_Ω(A) / p (spectral initialization).
+  It is infeasible, but close to the solution with high probability;
+* `:feasible`: P_Ω(A) itself, which satisfies all the constraints but generically has full rank;
+* `:zero`: the zero matrix. Beware that X = 0 is a local minimizer of rank(X) + τ ‖c(X)‖ for any τ.
+
+## Return Value
+
+An instance of an `NLPModel` representing the equality-constrained matrix completion problem,
+and the exact solution vec(A).
+"""
+function random_matrix_completion_eq_model(;
+  m::Int = 100,
+  n::Int = 100,
+  r::Int = 5,
+  sr::Float64 = 0.8,
+  init::Symbol = :spectral,
+)
+  xs, B, ω = mat_rand(m, n, r, sr, 0.0, 0.0, 0.0)
+  return random_matrix_completion_eq_model(xs, B, ω; init = init, r = r)
+end
+
+"""
+    model, sol = random_matrix_completion_eq_model(xs, B, ω; init = :spectral, r = min(size(xs)...))
+
+Same as above for given data, where `B` contains the observed entries of `xs` and `ω` their
+column-major linear indices.
+The rank `r` is only used by the spectral initialization; its default `min(m, n)` performs no truncation.
+"""
+function random_matrix_completion_eq_model(
+  xs,
+  B,
+  ω;
+  init::Symbol = :spectral,
+  r::Int = min(size(xs)...),
+)
+  init ∈ (:spectral, :feasible, :zero) ||
+    throw(ArgumentError("unknown init :$init; choose :spectral, :feasible or :zero"))
+  m, n = size(xs)
+  T = eltype(B)
+
+  x0 = zeros(T, m * n)
+  if init != :zero
+    x0[ω] .= B  # P_Ω(A)
+  end
+  if init == :spectral
+    F = svd(reshape(x0, m, n) ./ (length(ω) / (m * n)))
+    k = clamp(r, 0, min(m, n))
+    x0 .= vec(F.U[:, 1:k] * Diagonal(F.S[1:k]) * F.Vt[1:k, :])
+  end
+
+  cons!(cx, x) = (cx .= view(x, ω) .- B)
+  jprod!(jv, x, v) = (jv .= view(v, ω))
+  function jtprod!(jtv, x, v)
+    jtv .= 0
+    jtv[ω] .= v
+    return jtv
+  end
+  jac_coord!(vals, x) = fill!(vals, one(T))
+
+  # The objective is zero and the constraints are linear, so all Hessians vanish.
+  obj(x) = zero(T)
+  grad!(g, x) = fill!(g, zero(T))
+  hprod!(hv, x, args...; obj_weight = one(T)) = fill!(hv, zero(T))
+  hess_coord!(vals, x, args...; obj_weight = one(T)) = vals
+
+  nlp = NLPModel(
+    x0,
+    obj,
+    grad = grad!,
+    hprod = hprod!,
+    hess_coord = (Int[], Int[], hess_coord!),
+    cons = (cons!, zero(B), zero(B)),
+    jprod = jprod!,
+    jtprod = jtprod!,
+    jac_coord = (collect(1:length(ω)), collect(Int, ω), jac_coord!),
+    meta_args = (name = "MATRAND-EQ",),
+  )
+  return nlp, collect(vec(xs))
 end

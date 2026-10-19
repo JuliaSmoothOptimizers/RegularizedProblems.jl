@@ -1,7 +1,13 @@
 using LinearAlgebra, Test
 using ADNLPModels,
-  DifferentialEquations, LinearOperators, ManualNLPModels, MLDatasets, NLPModels, NLPModelsModifiers
-using NLPModelsTest, QuadraticModels
+  DifferentialEquations,
+  LinearOperators,
+  ManualNLPModels,
+  MLDatasets,
+  NLPModels,
+  NLPModelsModifiers,
+  NLPModelsTest,
+  QuadraticModels
 using RegularizedProblems
 
 function test_well_defined(model, nls_model, sol)
@@ -129,6 +135,46 @@ end
   @test all(0 .<= model.meta.x0 .<= 1)
   @test nls_model.nls_meta.nequ == 10000
   @test all(0 .<= nls_model.meta.x0 .<= 1)
+
+  # Equality-constrained random matrix completion model
+  xs, B, ω = RegularizedProblems.mat_rand(100, 100, 5, 0.8, 0.0, 0.0, 0.0)
+  model, sol = random_matrix_completion_eq_model(xs, B, ω)
+  @test model.meta.nvar == 100 * 100
+  @test 0 < model.meta.ncon < 100 * 100
+  @test norm(cons(model, sol)) ≤ 1e-12
+
+  # Compare with an ADNLPModel on a small instance.
+  # Use a fresh model so that its counters start at zero, like those of the ADNLPModel,
+  # and keep n small since consistent_nlps allocates dense n × n work arrays.
+  xs_c, B_c, ω_c = RegularizedProblems.mat_rand(30, 30, 3, 0.8, 0.0, 0.0, 0.0)
+  model_c, _ = random_matrix_completion_eq_model(xs_c, B_c, ω_c)
+  f(x) = zero(eltype(x))
+  c(x) = x[ω_c] - B_c
+  ad_model = ADNLPModel(f, model_c.meta.x0, c, zero(B_c), zero(B_c))
+  consistent_nlps(
+    [model_c, ad_model],
+    exclude = [hess, hess_coord, jth_hess, jth_hess_coord, jth_hprod, ghjvprod],
+    test_derivative = false,
+  )
+
+  # Initial guesses, on a non-square instance to check the indexing
+  m, n, r = 12, 8, 2
+  xs, B, ω = RegularizedProblems.mat_rand(m, n, r, 0.8, 0.0, 0.0, 0.0)
+  @test xs[ω] == B
+  @test_throws ArgumentError random_matrix_completion_eq_model(xs, B, ω, init = :foo)
+
+  model, sol = random_matrix_completion_eq_model(xs, B, ω)
+  @test model.meta.nvar == m * n
+  @test norm(cons(model, sol)) ≤ 1e-10
+
+  model, _ = random_matrix_completion_eq_model(xs, B, ω, init = :zero)
+  @test all(model.meta.x0 .== 0)
+
+  model, _ = random_matrix_completion_eq_model(xs, B, ω, init = :feasible)
+  @test norm(cons(model, model.meta.x0)) ≤ 1e-10
+
+  model, _ = random_matrix_completion_eq_model(xs, B, ω, init = :spectral, r = r)
+  @test rank(reshape(model.meta.x0, m, n)) == r
 end
 
 @testset "MIT" begin
