@@ -103,7 +103,6 @@ end
   @test all(nls_model.meta.uvar .== Inf)
 end
 
-"""
 @testset "FH" begin
   model, nls_model, sol = fh_model()
   test_objectives(model, nls_model)
@@ -117,7 +116,6 @@ end
   @test nls_model.nls_meta.nequ == 202
   @test all(nls_model.meta.x0 .== 1)
 end
-"""
 
 @testset "low-rank completion" begin
   model, nls_model, A = lrcomp_model()
