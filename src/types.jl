@@ -71,12 +71,23 @@ function NLPModels.obj(rnlp::AbstractRegularizedNLPModel, x::AbstractVector)
   obj(rnlp.model, x) + rnlp.h(x)
 end
 
-function NLPModels.hess_op(rnlp::AbstractRegularizedNLPModel, x::AbstractVector)
-  return hess_op(rnlp.model, x)
-end
-
-function NLPModels.hess(rnlp::AbstractRegularizedNLPModel, x::AbstractVector; obj_weight = 1.0)
-  return hess(rnlp.model, x; obj_weight = obj_weight)
+# Forward NLPModels API functions to the smooth model.
+# Each entry is (function name, types of the arguments that follow the model).
+for (meth, argtypes) ∈ (
+  (:grad!, (:AbstractVector, :AbstractVector)),
+  (:hess_op, (:AbstractVector,)),
+  (:hess, (:AbstractVector,)),
+  (:hess_structure!, (:(AbstractVector{<:Integer}), :(AbstractVector{<:Integer}))),
+  (:hess_coord!, (:AbstractVector, :AbstractVector, :AbstractVector)),
+  (:jac_nln_structure!, (:(AbstractVector{<:Integer}), :(AbstractVector{<:Integer}))),
+  (:jac_nln_coord!, (:AbstractVector, :AbstractVector)),
+  (:cons_nln!, (:AbstractVector, :AbstractVector)),
+  (:get_counters, ()),
+)
+  args = [Symbol(:arg, i) for i in eachindex(argtypes)]
+  sig = [:($a::$T) for (a, T) in zip(args, argtypes)]
+  @eval NLPModels.$meth(rnlp::AbstractRegularizedNLPModel, $(sig...); kwargs...) =
+    NLPModels.$meth(rnlp.model, $(args...); kwargs...)
 end
 
 # Forward meta getters so they grab info from the smooth model
