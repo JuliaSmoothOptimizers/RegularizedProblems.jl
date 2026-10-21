@@ -35,11 +35,16 @@ mutable struct RegularizedNLPModel{T, S, M <: AbstractNLPModel{T, S}, H, I} <:
   model::M     # smooth  model
   h::H         # regularizer
   selected::I  # set of variables to which the regularizer should be applied
+  meta::NLPModelMeta{T, S}  # shared with model.meta
 end
 
 function RegularizedNLPModel(model::AbstractNLPModel{T, S}, h::H) where {T, S, H}
   selected = 1:get_nvar(model)
-  RegularizedNLPModel{T, S, typeof(model), typeof(h), typeof(selected)}(model, h, selected)
+  RegularizedNLPModel(model, h, selected)
+end
+
+function RegularizedNLPModel(model::AbstractNLPModel{T, S}, h::H, selected::I) where {T, S, H, I}
+  RegularizedNLPModel{T, S, typeof(model), H, I}(model, h, selected, model.meta)
 end
 
 mutable struct RegularizedNLSModel{T, S, M <: AbstractNLSModel{T, S}, H, I} <:
@@ -47,11 +52,16 @@ mutable struct RegularizedNLSModel{T, S, M <: AbstractNLSModel{T, S}, H, I} <:
   model::M     # smooth  model
   h::H         # regularizer
   selected::I  # set of variables to which the regularizer should be applied
+  meta::NLPModelMeta{T, S}  # shared with model.meta
 end
 
 function RegularizedNLSModel(model::AbstractNLSModel{T, S}, h::H) where {T, S, H}
   selected = 1:get_nvar(model)
-  RegularizedNLSModel{T, S, typeof(model), typeof(h), typeof(selected)}(model, h, selected)
+  RegularizedNLSModel(model, h, selected)
+end
+
+function RegularizedNLSModel(model::AbstractNLSModel{T, S}, h::H, selected::I) where {T, S, H, I}
+  RegularizedNLSModel{T, S, typeof(model), H, I}(model, h, selected, model.meta)
 end
 
 function NLPModels.obj(rnlp::AbstractRegularizedNLPModel, x::AbstractVector)
