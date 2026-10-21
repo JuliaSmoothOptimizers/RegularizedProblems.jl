@@ -35,11 +35,16 @@ mutable struct RegularizedNLPModel{T, S, M <: AbstractNLPModel{T, S}, H, I} <:
   model::M     # smooth  model
   h::H         # regularizer
   selected::I  # set of variables to which the regularizer should be applied
+  meta::NLPModelMeta{T, S}  # shared with model.meta
 end
 
 function RegularizedNLPModel(model::AbstractNLPModel{T, S}, h::H) where {T, S, H}
   selected = 1:get_nvar(model)
-  RegularizedNLPModel{T, S, typeof(model), typeof(h), typeof(selected)}(model, h, selected)
+  RegularizedNLPModel(model, h, selected)
+end
+
+function RegularizedNLPModel(model::AbstractNLPModel{T, S}, h::H, selected::I) where {T, S, H, I}
+  RegularizedNLPModel{T, S, typeof(model), H, I}(model, h, selected, model.meta)
 end
 
 mutable struct RegularizedNLSModel{T, S, M <: AbstractNLSModel{T, S}, H, I} <:
@@ -47,11 +52,16 @@ mutable struct RegularizedNLSModel{T, S, M <: AbstractNLSModel{T, S}, H, I} <:
   model::M     # smooth  model
   h::H         # regularizer
   selected::I  # set of variables to which the regularizer should be applied
+  meta::NLPModelMeta{T, S}  # shared with model.meta
 end
 
 function RegularizedNLSModel(model::AbstractNLSModel{T, S}, h::H) where {T, S, H}
   selected = 1:get_nvar(model)
-  RegularizedNLSModel{T, S, typeof(model), typeof(h), typeof(selected)}(model, h, selected)
+  RegularizedNLSModel(model, h, selected)
+end
+
+function RegularizedNLSModel(model::AbstractNLSModel{T, S}, h::H, selected::I) where {T, S, H, I}
+  RegularizedNLSModel{T, S, typeof(model), H, I}(model, h, selected, model.meta)
 end
 
 function NLPModels.obj(rnlp::AbstractRegularizedNLPModel, x::AbstractVector)
@@ -61,12 +71,23 @@ function NLPModels.obj(rnlp::AbstractRegularizedNLPModel, x::AbstractVector)
   obj(rnlp.model, x) + rnlp.h(x)
 end
 
-function NLPModels.hess_op(rnlp::AbstractRegularizedNLPModel, x::AbstractVector)
-  return hess_op(rnlp.model, x)
-end
-
-function NLPModels.hess(rnlp::AbstractRegularizedNLPModel, x::AbstractVector; obj_weight = 1.0)
-  return hess(rnlp.model, x; obj_weight = obj_weight)
+# Forward NLPModels API functions to the smooth model.
+# Each entry is (function name, types of the arguments that follow the model).
+for (meth, argtypes) ∈ (
+  (:grad!, (:AbstractVector, :AbstractVector)),
+  (:hess_op, (:AbstractVector,)),
+  (:hess, (:AbstractVector,)),
+  (:hess_structure!, (:(AbstractVector{<:Integer}), :(AbstractVector{<:Integer}))),
+  (:hess_coord!, (:AbstractVector, :AbstractVector, :AbstractVector)),
+  (:jac_nln_structure!, (:(AbstractVector{<:Integer}), :(AbstractVector{<:Integer}))),
+  (:jac_nln_coord!, (:AbstractVector, :AbstractVector)),
+  (:cons_nln!, (:AbstractVector, :AbstractVector)),
+  (:get_counters, ()),
+)
+  args = [Symbol(:arg, i) for i in eachindex(argtypes)]
+  sig = [:($a::$T) for (a, T) in zip(args, argtypes)]
+  @eval NLPModels.$meth(rnlp::AbstractRegularizedNLPModel, $(sig...); kwargs...) =
+    NLPModels.$meth(rnlp.model, $(args...); kwargs...)
 end
 
 # Forward meta getters so they grab info from the smooth model
